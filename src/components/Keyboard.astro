@@ -1,0 +1,36 @@
+---
+import { buildBoard, boardSize, KEY_UNIT, KEY_SIZE } from '../lib/keyboard.js';
+
+const { rows, subRows = null, geometry = 'row', color = 'var(--gc)', label = '配列図' } = Astro.props;
+const keys = buildBoard({ rows, subRows, geometry });
+const size = keys ? boardSize(keys) : null;
+---
+{keys && (
+  <svg class="board" viewBox={`0 0 ${size.w.toFixed(1)} ${size.h.toFixed(1)}`}
+       xmlns="http://www.w3.org/2000/svg" role="img" aria-label={label}>
+    {keys.map(k => {
+      const x = 1 + k.x * KEY_UNIT;
+      const y = 1 + k.y * KEY_UNIT;
+      const w = k.w * KEY_UNIT - (KEY_UNIT - KEY_SIZE);
+      const cx = x + w / 2;
+      return (
+        <>
+          <rect x={x.toFixed(1)} y={y.toFixed(1)} width={w.toFixed(1)} height={KEY_SIZE}
+                rx="2.5" fill="#fff" stroke={k.dim ? '#C8C7BF' : '#B4B3AB'} />
+          {k.s && (
+            <text x={cx.toFixed(1)} y={(y + 11).toFixed(1)} font-size="9.5" text-anchor="middle"
+                  font-family="serif" fill="var(--chord)" opacity=".85">{k.s}</text>
+          )}
+          {k.l && (
+            k.s
+              ? <text x={cx.toFixed(1)} y={(y + 23).toFixed(1)} font-size="12" text-anchor="middle"
+                      font-family="serif" fill={color}>{k.l}</text>
+              : <text x={cx.toFixed(1)} y={(y + KEY_SIZE / 2 + 4.4).toFixed(1)} font-size="12.5"
+                      text-anchor="middle" font-family="serif"
+                      fill={k.dim ? '#A5A49C' : color}>{k.l}</text>
+          )}
+        </>
+      );
+    })}
+  </svg>
+)}

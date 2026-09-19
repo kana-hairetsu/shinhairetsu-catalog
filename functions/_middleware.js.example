@@ -1,0 +1,37 @@
+/**
+ * パスワードでサイト全体を保護する（任意）。
+ *
+ * 使い方
+ *   1. このファイルの名前を _middleware.js に変える（.example を取る）
+ *   2. Cloudflare Pages の 設定 → 変数とシークレット に次を追加する
+ *        SITE_USER      … 利用者名（例 review）
+ *        SITE_PASSWORD  … パスワード
+ *   3. 再デプロイする
+ *
+ * 正式公開するときは、このファイルを削除するか _middleware.js.example に戻す。
+ * ブラウザの標準ダイアログで名前とパスワードを聞かれる方式です。
+ */
+export async function onRequest(context) {
+  const { request, env, next } = context;
+  const user = env.SITE_USER;
+  const pass = env.SITE_PASSWORD;
+
+  // 環境変数が未設定なら素通しする（設定し忘れでサイトが開けなくなるのを防ぐ）
+  if (!user || !pass) return next();
+
+  const header = request.headers.get('Authorization') || '';
+  if (header.startsWith('Basic ')) {
+    const decoded = atob(header.slice(6));
+    const i = decoded.indexOf(':');
+    if (decoded.slice(0, i) === user && decoded.slice(i + 1) === pass) {
+      return next();
+    }
+  }
+  return new Response('このページを見るにはパスワードが必要です。', {
+    status: 401,
+    headers: {
+      'WWW-Authenticate': 'Basic realm="shinhairetsu-catalog", charset="UTF-8"',
+      'Content-Type': 'text/plain; charset=utf-8',
+    },
+  });
+}

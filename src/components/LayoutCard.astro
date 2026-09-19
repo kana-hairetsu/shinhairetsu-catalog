@@ -1,0 +1,52 @@
+---
+import Keyboard from './Keyboard.astro';
+const { layout: l, color } = Astro.props;
+---
+<article class="card" style={`--gc:${color}`}>
+  {l.keymapRows
+    ? <div class="board-box"><Keyboard rows={l.keymapRows} subRows={l.keymapSubRows}
+        geometry={l.geometry} color={color} label={`${l.name}の配列図`} /></div>
+    : l.figure
+      ? <div class="board-box"><img src={`/figures/${l.figure}`} alt={`${l.name}の配列図`} /></div>
+      : <div class="board-none">配列図は準備中です</div>}
+
+  <div class="card-h">
+    <a href={`/layouts/${l.id}/`}>{l.name}</a>
+    <div class="kana">{l.kana}</div>
+    {l.year && <div class="by">{l.year}年公開</div>}
+  </div>
+
+  <p class="card-line">{l.q31}</p>
+
+  <div class="tags">
+    {l.phys_keys && <span class="tag key">{l.phys_keys}</span>}
+    {l.shift && <span class="tag">{l.shift}</span>}
+    {l.chord && <span class="tag">同時打鍵{l.chord}</span>}
+    {l.q21 !== '' && <span class="tag">習得 {['短め','普通','長め'][l.learnIndex]}</span>}
+  </div>
+
+  <div class="card-f">
+    <div><span>必要ソフト</span><b>{l.software || '—'}</b></div>
+    {l.os && <div><span>対応OS</span><b>{l.os}</b></div>}
+  </div>
+</article>
+
+<style>
+.card{background:#fff;border:1px solid var(--rule);display:flex;flex-direction:column}
+.card-h{padding:15px 18px 0}
+.card-h a{font-family:"Shippori Mincho B1",serif;font-size:22px;font-weight:700;text-decoration:none}
+.card-h a:hover{color:var(--gc);text-decoration:underline}
+.kana{font-size:11.5px;color:var(--ink-soft);letter-spacing:.08em;margin-top:1px}
+.by{font-size:12.5px;color:var(--ink-soft);margin-top:6px}
+.card-line{padding:11px 18px 15px;font-size:14px;line-height:1.75;flex:1}
+.tags{padding:0 18px 15px;display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:11.5px;border:1px solid var(--rule-strong);color:var(--ink-soft);
+  padding:2px 8px;border-radius:2px;white-space:nowrap}
+.tag.key{border-color:var(--gc);color:var(--gc)}
+.card-f{padding:10px 18px 11px;background:var(--paper-2);border-top:1px solid var(--rule);
+  font-size:12px;color:var(--ink-soft)}
+.card-f > div{display:grid;grid-template-columns:5.2em 1fr;gap:8px;align-items:baseline;
+  padding:2px 0}
+.card-f > div + div{border-top:1px solid var(--rule);margin-top:3px;padding-top:5px}
+.card-f b{font-weight:400;color:var(--ink);line-height:1.5}
+</style>
