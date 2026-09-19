@@ -15,7 +15,7 @@ let keys = [], max = 0, legend = [];
 if (d) {
   const to = hex(d.color);
   max = Math.max(...Object.values(d.heat), 1);
-  keys = boardFromLabels(d.labels, d.subs, geometry).map(k => {
+  keys = boardFromLabels(d.labels, d.subs, geometry, Object.keys(d.heat)).map(k => {
     const n = d.heat[k.id] ?? 0;
     // 平方根に近い曲線で、少ないキーも見えるようにする
     const t = n ? Math.pow(n / max, 0.6) : 0;

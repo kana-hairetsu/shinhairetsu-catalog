@@ -122,9 +122,11 @@ def heatmap(td, strokes):
         count[main] += 1
         for m in mods:
             count[m] += 1
+    thumbs = set(getattr(td, "THUMB_KEYS", set())) | {
+        "space", "henkan", "muhenkan", "kana", "lthumb", "rthumb"}
     hands = {"L": 0, "R": 0, "thumb": 0}
     for k, n in count.items():
-        if k in getattr(td, "THUMB_KEYS", set()):
+        if k in thumbs:
             hands["thumb"] += n
         else:
             hands[td.HAND_OF_KEY.get(k, "L")] += n

@@ -12,7 +12,7 @@ const uid = 'tp' + Math.random().toString(36).slice(2, 8);
 /* 盤面はここで組み立てて渡す。配列図・ヒートマップと同じ関数を使うので並びが揃う */
 const boards = ids.map((id, i) => {
   const h = HEAT[id];
-  return h ? boardFromLabels(h.labels, h.subs, geometries[i] ?? 'row') : [];
+  return h ? boardFromLabels(h.labels, h.subs, geometries[i] ?? 'row', Object.keys(h.heat)) : [];
 });
 ---
 <section class="player" id={uid}>
