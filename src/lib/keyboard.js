@@ -12,17 +12,17 @@ const FINGER = [
 ];
 
 /** 既定の刻印。配列側で割り当てがなければ、これを薄い色で出す */
-const MOD_KEYS = [
-  { id: 'lshift', row: 3, x: -1.16, w: 2.2, cap: 'Shift' },
-  { id: 'rshift', row: 3, x: 11.04, w: 2.2, cap: 'Shift' },
-];
-const THUMB_KEYS = [
-  { id: 'lthumb',   row: 4, x: 1.40, w: 1.4, cap: '親指左' },
-  { id: 'muhenkan', row: 4, x: 2.80, w: 1.4, cap: '無変換' },
-  { id: 'space',    row: 4, x: 4.20, w: 3.0, cap: '空白' },
-  { id: 'henkan',   row: 4, x: 7.20, w: 1.4, cap: '変換' },
-  { id: 'kana',     row: 4, x: 8.60, w: 1.4, cap: 'かな' },
-  { id: 'rthumb',   row: 4, x: 10.00, w: 1.4, cap: '親指右' },
+/* シフトと親指キーは文字段の下に1段まとめる。
+   文字段の並びを崩さないため、また使わない配列では段ごと省くため。 */
+const EXTRA_KEYS = [
+  { id: 'lshift',   row: 4, x: 0.00,  w: 2.2, cap: 'Shift' },
+  { id: 'lthumb',   row: 4, x: 2.40,  w: 1.4, cap: '親指左' },
+  { id: 'muhenkan', row: 4, x: 3.80,  w: 1.4, cap: '無変換' },
+  { id: 'space',    row: 4, x: 5.20,  w: 2.6, cap: '空白' },
+  { id: 'henkan',   row: 4, x: 7.80,  w: 1.4, cap: '変換' },
+  { id: 'kana',     row: 4, x: 9.20,  w: 1.4, cap: 'かな' },
+  { id: 'rthumb',   row: 4, x: 10.60, w: 1.4, cap: '親指右' },
+  { id: 'rshift',   row: 4, x: 12.00, w: 2.2, cap: 'Shift' },
 ];
 
 /** カラムスタッガード：列ごとに縦へずらす量。中指列が最も高く、小指列が低い */
@@ -31,8 +31,11 @@ const COL_Y = [0.16, 0, -0.20, -0.06, 0.10, 0.10, -0.06, -0.20, 0, 0.16, 0.24, 0
 export const KEY_UNIT = 29.4;
 export const KEY_SIZE = 27;
 export const GEOMETRIES = ['row', 'ortho', 'column'];
-export const DEFAULT_CAPS = Object.fromEntries(
-  [...MOD_KEYS, ...THUMB_KEYS].map(k => [k.id, k.cap]));
+export const DEFAULT_CAPS = {
+  // 数字段は物理キーの刻印をそのまま薄く出す。割り当てがあればそちらが優先される
+  ...Object.fromEntries(FINGER[0].keys.map(id => [id, id])),
+  ...Object.fromEntries(EXTRA_KEYS.map(k => [k.id, k.cap])),
+};
 
 /**
  * 物理キーの位置を決める。配列図・ヒートマップ・動画がすべてこれを使うので、
@@ -41,17 +44,17 @@ export const DEFAULT_CAPS = Object.fromEntries(
  *   ortho  … オーソリニア（格子状）
  *   column … カラムスタッガード（列ごとに上下がずれる）
  *
- * cols   … 指キーの段ごとの列数。省略時は 11/10/10/10（従来と同じ見え方）
- * extras … 追加で描くキーID（lshift / henkan など）
+ * 指キー（文字キー）は常に全部描く。使用頻度や割り当ての有無では省かない。
+ * extras … 追加で描くキーID（lshift / henkan など）。使う配列でだけ現れる
  */
-export function placeKeys(geometry = 'row', { cols = [11, 10, 10, 10], extras = [] } = {}) {
+export function placeKeys(geometry = 'row', { extras = [] } = {}) {
   const stagger = geometry === 'row';
   const colY = geometry === 'column' ? COL_Y : null;
   const want = new Set(extras);
   const keys = [];
 
   FINGER.forEach(({ row, x: off, keys: ids }) => {
-    ids.slice(0, cols[row] ?? ids.length).forEach((id, c) => {
+    ids.forEach((id, c) => {
       keys.push({
         id, row, col: c, w: 1,
         x: +((stagger ? off : 0) + c).toFixed(3),
@@ -60,7 +63,7 @@ export function placeKeys(geometry = 'row', { cols = [11, 10, 10, 10], extras = 
     });
   });
 
-  [...MOD_KEYS, ...THUMB_KEYS].forEach(k => {
+  EXTRA_KEYS.forEach(k => {
     if (!want.has(k.id)) return;
     keys.push({ id: k.id, row: k.row, col: null, w: k.w, x: k.x, y: k.row });
   });
@@ -78,7 +81,7 @@ export function placeKeys(geometry = 'row', { cols = [11, 10, 10, 10], extras = 
 /** その配列が実際に使うキーだけを、追加分として拾う */
 function extrasFrom(...maps) {
   const ids = new Set();
-  [...MOD_KEYS, ...THUMB_KEYS].forEach(k => {
+  EXTRA_KEYS.forEach(k => {
     if (maps.some(m => m && m[k.id] !== undefined)) ids.add(k.id);
   });
   return [...ids];
@@ -104,8 +107,7 @@ function colsFrom(...maps) {
 export function buildBoard({ rows, subRows = null, geometry = 'row' }) {
   if (!rows || !rows.length) return null;
   const withSpace = rows.length >= 5 && rows[4].trim() !== '';
-  const cols = FINGER.map(({ row }) => Math.max([11, 10, 10, 10][row], [...(rows[row] ?? '')].length));
-  return placeKeys(geometry, { cols, extras: withSpace ? ['space'] : [] }).map(k => {
+  return placeKeys(geometry, { extras: withSpace ? ['space'] : [] }).map(k => {
     if (k.col === null) return { ...k, l: rows[4].trim(), s: '', dim: 0 };
     const l = [...(rows[k.row] ?? '')][k.col] ?? '';
     const s = [...((subRows && subRows[k.row]) ?? '')][k.col] ?? '';
@@ -124,9 +126,8 @@ export function buildBoard({ rows, subRows = null, geometry = 'row' }) {
  */
 export function boardFromLabels(labels, subs = {}, geometry = 'row', used = null) {
   const usedMap = used ? Object.fromEntries([...used].map(id => [id, ''])) : null;
-  const cols = colsFrom(labels, subs, usedMap);
   const extras = extrasFrom(labels, subs, usedMap);
-  return placeKeys(geometry, { cols, extras }).map(k => {
+  return placeKeys(geometry, { extras }).map(k => {
     const assigned = labels[k.id];
     const l = assigned ?? DEFAULT_CAPS[k.id] ?? '';
     return {
