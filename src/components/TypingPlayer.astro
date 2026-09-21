@@ -20,7 +20,7 @@ const boards = ids.map((id, i) => {
   <p class="src">
     夏目漱石『吾輩は猫である』の冒頭を打ったときの動きです。<b>どの配列も同じ時刻に打ち終わります</b>。
     1打あたりの間隔は「再生時間 ÷ アクション数」で決まるため、アクションの多い配列ほど速く刻みます。
-    同時押しは1回の動作として数え、押されたキーを臙脂色で表示します。
+    同時押しは1回の動作として数え、押されたキーを臙脂色で表示します。下のお題文は、再生中は打っている位置へ自動で送られ、止めているあいだはスクロールして全文を読めます。
   </p>
 
   <div class="bar">
@@ -237,7 +237,12 @@ const boards = ids.map((id, i) => {
 .total{padding:10px 16px;background:var(--paper-2);font-size:12px;color:var(--ink-soft);line-height:1.6}
 .total b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
 .ticker{background:#fff;border:1px solid var(--rule);padding:16px 20px;font-size:16px;
-  line-height:2;height:8em;overflow:hidden}
+  line-height:2;height:8em;overflow-y:auto;overscroll-behavior:contain}
+/* 再生中は打っている位置へ自動で送り、止めているあいだは自由にスクロールできる */
+.ticker::-webkit-scrollbar{width:10px}
+.ticker::-webkit-scrollbar-thumb{background:var(--rule);border:3px solid #fff;border-radius:5px}
+.ticker::-webkit-scrollbar-thumb:hover{background:var(--rule-strong)}
+.ticker{scrollbar-width:thin;scrollbar-color:var(--rule) #fff}
 .ticker .done{color:var(--ink)}
 .ticker .todo{color:#C6C5BD}
 .err{color:var(--ink-soft);font-size:13.5px}
