@@ -44,7 +44,7 @@ const boards = ids.map((id, i) => {
   </div>
 
   <div class="grid" data-role="grid"></div>
-  <div class="ticker" data-role="ticker"></div>
+  <div class="ticker" data-role="ticker"><p data-role="tickerin"></p></div>
 </section>
 
 <script define:vars={{ uid, ids, boards }}>
@@ -145,23 +145,23 @@ const boards = ids.map((id, i) => {
       document.getElementById(`${uid}-p${i}`).style.width = (p * 100) + '%';
       if (i === 0) ci = a.c;
     });
-    if (ci !== lastCi) {
-      lastCi = ci;
-      const T = META.text, box = $('ticker');
-      // いま打っている1文字を .cur に入れる。空の span だと位置が取れない
-      box.innerHTML = `<span class="done">${T.slice(0, ci)}</span>`
-        + `<span class="done cur">${T[ci] ?? ''}</span>`
-        + `<span class="todo">${T.slice(ci + 1)}</span>`;
-      const cur = box.querySelector('.cur');
-      if (cur) {
-        // offsetTop は枠ではなくページ基準になることがあるので、矩形の差で測る
-        const top = cur.getBoundingClientRect().top
-                  - box.getBoundingClientRect().top + box.scrollTop;
-        box.scrollTop = Math.max(0, top - box.clientHeight * 0.55);
-      }
-    }
+    if (ci !== lastCi) { lastCi = ci; paint(ci); }
     if (el < DUR && running) raf = requestAnimationFrame(frame);
     else if (el >= DUR) { running = false; pausedAt = 0; t0 = null; $('play').textContent = 'もう一度'; }
+  }
+
+  /** お題文を打ち終わった位置まで塗り、打っている文字を枠の中ほどへ送る */
+  function paint(ci) {
+    const T = META.text, box = $('ticker'), inner = $('tickerin');
+    inner.innerHTML = `<span class="done">${T.slice(0, ci)}</span>`
+      + `<span class="cur">${T[ci] ?? ''}</span>`
+      + `<span class="todo">${T.slice(ci + 1)}</span>`;
+    const cur = inner.querySelector('.cur');
+    if (!cur) return;
+    // 枠が position:relative なので offsetTop は枠の中身の上端からの距離になる
+    const top = cur.offsetTop + cur.offsetHeight / 2;
+    const want = top - box.clientHeight / 2;
+    box.scrollTop = Math.max(0, Math.min(want, box.scrollHeight - box.clientHeight));
   }
 
   function reset() {
@@ -171,8 +171,8 @@ const boards = ids.map((id, i) => {
       ['k', 'c', 'a'].forEach(s => document.getElementById(`${uid}-n${i}${s}`).textContent = '0');
       document.getElementById(`${uid}-p${i}`).style.width = '0';
     });
-    const box = $('ticker');
-    box.innerHTML = `<span class="todo">${META.text}</span>`; box.scrollTop = 0;
+    $('tickerin').innerHTML = `<span class="todo">${META.text}</span>`;
+    $('ticker').scrollTop = 0;
     $('play').textContent = '再生';
   }
 
@@ -251,7 +251,9 @@ const boards = ids.map((id, i) => {
 .ticker::-webkit-scrollbar-thumb{background:var(--rule);border:3px solid #fff;border-radius:5px}
 .ticker::-webkit-scrollbar-thumb:hover{background:var(--rule-strong)}
 .ticker{scrollbar-width:thin;scrollbar-color:var(--rule) #fff}
+.ticker > p{margin:0}
 .ticker .done{color:var(--ink)}
 .ticker .todo{color:#C6C5BD}
+.ticker .cur{color:#fff;background:var(--gc);border-radius:2px;padding:0 1px}
 .err{color:var(--ink-soft);font-size:13.5px}
 </style>
