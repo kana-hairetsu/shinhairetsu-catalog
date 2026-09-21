@@ -158,10 +158,17 @@ const boards = ids.map((id, i) => {
       + `<span class="todo">${T.slice(ci + 1)}</span>`;
     const cur = inner.querySelector('.cur');
     if (!cur) return;
-    // 枠が position:relative なので offsetTop は枠の中身の上端からの距離になる
-    const top = cur.offsetTop + cur.offsetHeight / 2;
-    const want = top - box.clientHeight / 2;
-    box.scrollTop = Math.max(0, Math.min(want, box.scrollHeight - box.clientHeight));
+
+    // 枠の中身の上端から、いま打っている文字までの距離を測る。
+    // offsetTop は枠が position:relative のとき正しい値を返すが、
+    // 環境によっては 0 のままのことがあるので、矩形の差でも測って大きい方を採る。
+    const byOffset = cur.offsetTop + cur.offsetHeight / 2;
+    const byRect = cur.getBoundingClientRect().top
+                 - inner.getBoundingClientRect().top + cur.offsetHeight / 2;
+    const top = Math.max(byOffset, byRect);
+
+    const max = Math.max(0, box.scrollHeight - box.clientHeight);
+    box.scrollTop = Math.min(Math.max(0, top - box.clientHeight / 2), max);
   }
 
   function reset() {
