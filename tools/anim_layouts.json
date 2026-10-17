@@ -1,24 +1,81 @@
 [
   {
-    "id": "qwerty", "name": "QWERTYローマ字", "genre": "ローマ字系", "color": "#1B3A5C",
-    "mode": "romaji", "geometry": "row",
-    "rows": ["qwertyuiop", "asdfghjkl;", "zxcvbnm,./"], "num": "1234567890-",
-    "extra": { "-": "-", "「": "[", "」": "]", "！": "rshift+1", "？": "lshift+/" }
+    "id": "qwerty",
+    "name": "QWERTYローマ字",
+    "genre": "ローマ字系",
+    "color": "#1B3A5C",
+    "mode": "romaji",
+    "geometry": "row",
+    "rows": [
+      "qwertyuiop",
+      "asdfghjkl;",
+      "zxcvbnm,./"
+    ],
+    "num": "1234567890-",
+    "extra": {
+      "-": "-",
+      "「": "[",
+      "」": "]",
+      "！": "rshift+1",
+      "？": "lshift+/"
+    }
   },
   {
-    "id": "oonishi", "name": "大西配列", "genre": "ローマ字系", "color": "#1B3A5C",
-    "mode": "romaji", "geometry": "row",
-    "rows": ["qlu,.fwryp", "eiao-ktnsh", "zxcv;gdmjb"], "num": "1234567890/",
-    "extra": { "/": "-", "？": "lshift+-" }
+    "id": "oonishi",
+    "name": "大西配列",
+    "genre": "ローマ字系",
+    "color": "#1B3A5C",
+    "mode": "romaji",
+    "geometry": "row",
+    "rows": [
+      "qlu,.fwryp",
+      "eiao-ktnsh",
+      "zxcv;gdmjb"
+    ],
+    "num": "1234567890/",
+    "extra": {
+      "/": "-",
+      "？": "lshift+-"
+    }
   },
   {
-    "id": "dvorak", "name": "DVORAK", "genre": "ローマ字系", "color": "#1B3A5C",
-    "mode": "romaji", "geometry": "row",
-    "rows": ["',.pyfgcrl", "aoeuidhtns", ";qjkxbmwvz"], "num": "1234567890-",
-    "extra": { "-": "'", "「": "-", "」": "=", "/": "[", "！": "rshift+1", "？": "lshift+[" }
+    "id": "dvorak",
+    "name": "DVORAK",
+    "genre": "ローマ字系",
+    "color": "#1B3A5C",
+    "mode": "romaji",
+    "geometry": "row",
+    "rows": [
+      "',.pyfgcrl",
+      "aoeuidhtns",
+      ";qjkxbmwvz"
+    ],
+    "num": "1234567890-",
+    "extra": {
+      "-": "'",
+      "「": "-",
+      "」": "=",
+      "/": "[",
+      "！": "rshift+1",
+      "？": "lshift+["
+    }
   },
   {
-    "id": "battou", "name": "抜刀式", "genre": "かな系", "color": "#3D7268",
-    "mode": "kana", "geometry": "row", "json": "layouts/naginata.json"
+    "id": "battou",
+    "name": "抜刀式",
+    "genre": "かな系",
+    "color": "#3D7268",
+    "mode": "kana",
+    "geometry": "row",
+    "json": "layouts/naginata.json"
+  },
+  {
+    "id": "kamu",
+    "name": "かむ配列",
+    "genre": "行段系",
+    "color": "#4A6E8A",
+    "mode": "chord",
+    "geometry": "grip",
+    "json": "tools/layouts/kamu.json"
   }
 ]

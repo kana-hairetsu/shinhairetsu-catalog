@@ -50,8 +50,9 @@ FIND = {
     "q13":       "1-3.",
     "q21":       "2-1. あなたの配列は",
     "q21c":      "2-1. ひと言",
-    "q22":       "2-2.",
-    "q23":       "2-3.",
+    # フォームの設問番号が「2-2」で重複していても拾えるよう、見出し文でも照合する
+    "q22":       ("2-2. 日本語", "2-2.日本語", "2-2."),
+    "q23":       ("2-3.", "2-2. 覚えやすく", "2-2.覚えやすく"),
     "q31":       "3-1.",
     "q32":       "3-2.",
     "q4":        "Q4.",
@@ -59,8 +60,10 @@ FIND = {
     "note":      "その他、ご連絡",
 }
 
-GENRE = {"ローマ字系": "romaji", "行段系": "gyodan", "かな系": "kana",
-         "漢字直接入力": "kanchoku", "速記系": "sokki"}
+# 「行段系（ローマ字系を除く）」のように括弧の中へ他ジャンル名が入るため、
+# 括弧を落としてから、限定の強い順に照合する
+GENRE = [("漢字直接入力", "kanchoku"), ("速記系", "sokki"), ("行段系", "gyodan"),
+         ("かな系", "kana"), ("ローマ字系", "romaji")]
 GEOMETRY = {"ロウスタッガード": "row", "オーソリニア": "ortho", "カラムスタッガード": "column"}
 AIM = ["速度を意識している", "快適さとの両立を考えている", "快適さを重視している"]
 LEARN = ["短め", "普通", "長め"]
@@ -146,20 +149,32 @@ def resources(v):
     return f"{title}^{urls[0]}"
 
 def index_of(v, options):
+    """選択肢のどれかを選ぶ。先頭が似た選択肢があるため、一致の長い方を採る"""
     s = clean(v)
+    if not s:
+        return ""
+    best, blen = "", 0
     for i, o in enumerate(options):
-        if s.startswith(o[:3]):
+        o = clean(o)
+        if s == o:
             return str(i)
-    return ""
+        n = len(os.path.commonprefix([s, o]))
+        if n > blen:
+            best, blen = str(i), n
+    return best if blen >= 3 else ""
 
 
 # ── 取り込み ──────────────────────────────────────────────────
 def find_cols(header):
     idx = {}
-    for key, head in FIND.items():
-        for i, h in enumerate(header):
-            if clean(h).startswith(clean(head)):
-                idx.setdefault(key, i)
+    for key, heads in FIND.items():
+        for head in (heads if isinstance(heads, tuple) else (heads,)):
+            for i, h in enumerate(header):
+                if clean(h).startswith(clean(head)) and i not in idx.values():
+                    idx.setdefault(key, i)
+                    break
+            if key in idx:
+                break
     # 配列図のアップロード列は見出しが崩れることがあるのでURLで探す
     return idx
 
@@ -200,11 +215,15 @@ def convert(path):
             warn.append(f"{name}：id「{lid}」が{seen[lid]}と重複します。手で変えてください")
         seen[lid] = name
 
-        genres = [GENRE[k] for k in GENRE if k in g(r, "genre")]
+        gtext = re.sub(r"[（(][^）)]*[）)]", "", g(r, "genre"))
+        genres = [v for k, v in GENRE if k in gtext]
         if not genres:
             warn.append(f"{name}：入力方式「{g(r,'genre')}」をジャンルに変換できません")
         elif len(genres) > 1:
             warn.append(f"{name}：入力方式が複数あります（{g(r,'genre')}）。{genres[0]} を採用しました")
+
+        if "10キー" in keys_label(g(r, "phys_keys")) or "専用" in kb:
+            warn.append(f"{name}：専用機の可能性があります。geometry を grip にするかご確認ください")
 
         kb = g(r, "keyboard")
         geo = next((v for k, v in GEOMETRY.items() if k in kb), "")

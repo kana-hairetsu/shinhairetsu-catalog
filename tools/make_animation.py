@@ -48,6 +48,44 @@ def kana_labels(layout):
     return base, sub
 
 
+# ---- 専用機（左右5キーのグリップ）用 ---------------------------------------
+GRIP_THUMBS = {"l5", "r1"}
+
+
+def grip_labels(layout):
+    """単独で押したときに決まる文字を、キーの刻印として拾う"""
+    base = {}
+    for name, spec in {**layout.get("_gyou", {}), **layout.get("_dan", {})}.items():
+        if spec and "+" not in spec:
+            base.setdefault(spec, name)
+    return base, {}
+
+
+def actions_chord(text, layout):
+    """1文字＝1アクション。拗音などは長いものを先に当てる"""
+    m = layout["map"]
+    maxlen = max(len(k) for k in m)
+    acts, i, n = [], 0, len(text)
+    while i < n:
+        for ln in range(min(maxlen, n - i), 0, -1):
+            spec = m.get(text[i:i + ln])
+            if spec:
+                acts.append({"c": i, "k": spec.split("+")})
+                i += ln
+                break
+        else:
+            i += 1          # 割り当ての無い文字は読み飛ばす
+    return acts
+
+
+def heatmap_chord(acts):
+    count = Counter(k for a in acts for k in a["k"])
+    hands = {"L": 0, "R": 0, "thumb": 0}
+    for k, n in count.items():
+        hands["thumb" if k in GRIP_THUMBS else ("L" if k.startswith("l") else "R")] += n
+    return dict(count), hands
+
+
 # ---- 打鍵列（どの文字を打っているかの位置つき） ----------------------------
 def units_kana(text):
     """っ／ん／拗音をまとめた最小単位に切る。
@@ -161,7 +199,16 @@ def main():
     print(f'{"id":<12}{"配列":<16}{"アクション":>10}{"打鍵":>9}{"同時押し":>9}{"左右":>12}')
     heat_all = {}
     for c in cfg:
-        if c["mode"] == "romaji":
+        if c["mode"] == "chord":
+            # 専用機（左右5キー）。1文字＝1アクションなので、エンジンを通さず直接数える
+            lay = json.load(open(c["json"], encoding="utf-8"))
+            labels, subs = grip_labels(lay)
+            acts = actions_chord(clip, lay)
+            full_acts = actions_chord(full, lay)
+            sf = summarize(full_acts)
+            heat, hands = heatmap_chord(full_acts)
+            sc = summarize(acts)
+        elif c["mode"] == "romaji":
             lay = td.alpha_layout(c["name"], *c["rows"], extra=c.get("extra"))
             labels, subs = alpha_labels(td, c["rows"], c["num"])
             acts = actions_romaji(td, clip, lay)
@@ -173,10 +220,11 @@ def main():
             acts = actions_kana(td, clip, lay)
             full_strokes = td.keystrokes_kana(full, lay)
             ref = summarize_strokes(td.keystrokes_kana(clip, lay))
-        sf = summarize_strokes(full_strokes)
-        sc = summarize(acts)
-        assert ref == sc, f"{c['id']}: エンジンの結果と一致しません {ref} != {sc}"
-        heat, hands = heatmap(td, full_strokes)
+        if c["mode"] != "chord":
+            sf = summarize_strokes(full_strokes)
+            sc = summarize(acts)
+            assert ref == sc, f"{c['id']}: エンジンの結果と一致しません {ref} != {sc}"
+            heat, hands = heatmap(td, full_strokes)
         heat_all[c["id"]] = {
             "id": c["id"], "name": c["name"], "genre": c["genre"], "color": c["color"],
             "labels": labels, "subs": subs, "heat": heat, "hands": hands,

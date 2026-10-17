@@ -28,9 +28,30 @@ const EXTRA_KEYS = [
 /** カラムスタッガード：列ごとに縦へずらす量。中指列が最も高く、小指列が低い */
 const COL_Y = [0.16, 0, -0.20, -0.06, 0.10, 0.10, -0.06, -0.20, 0, 0.16, 0.24, 0.30];
 
+/**
+ * グリップ（左右5キーずつの専用機）。左は外側から、右は内側から並べるので、
+ * 画面上は左右とも「外側＝小指、内側＝親指」になる。
+ * 親指のキーは最も内側にあるため、1段下げて描く。
+ */
+const GRIP_KEYS = [
+  { id: 'l1', x: 0.0, y: 0, finger: '小指',   hand: 'L' },
+  { id: 'l2', x: 1.0, y: 0, finger: '薬指',   hand: 'L' },
+  { id: 'l3', x: 2.0, y: 0, finger: '中指',   hand: 'L' },
+  { id: 'l4', x: 3.0, y: 0, finger: '人差指', hand: 'L' },
+  { id: 'l5', x: 4.0, y: 1, finger: '親指',   hand: 'L' },
+  { id: 'r1', x: 5.4, y: 1, finger: '親指',   hand: 'R' },
+  { id: 'r2', x: 6.4, y: 0, finger: '人差指', hand: 'R' },
+  { id: 'r3', x: 7.4, y: 0, finger: '中指',   hand: 'R' },
+  { id: 'r4', x: 8.4, y: 0, finger: '薬指',   hand: 'R' },
+  { id: 'r5', x: 9.4, y: 0, finger: '小指',   hand: 'R' },
+];
+
 export const KEY_UNIT = 29.4;
 export const KEY_SIZE = 27;
-export const GEOMETRIES = ['row', 'ortho', 'column'];
+export const GEOMETRIES = ['row', 'ortho', 'column', 'grip'];
+export const GRIP_IDS = GRIP_KEYS.map(k => k.id);
+export const GRIP_HAND = Object.fromEntries(GRIP_KEYS.map(k => [k.id, k.hand]));
+export const GRIP_THUMBS = GRIP_KEYS.filter(k => k.finger === '親指').map(k => k.id);
 export const DEFAULT_CAPS = {
   // 数字段は物理キーの刻印をそのまま薄く出す。割り当てがあればそちらが優先される
   ...Object.fromEntries(FINGER[0].keys.map(id => [id, id])),
@@ -48,6 +69,12 @@ export const DEFAULT_CAPS = {
  * extras … 追加で描くキーID（lshift / henkan など）。使う配列でだけ現れる
  */
 export function placeKeys(geometry = 'row', { extras = [] } = {}) {
+  if (geometry === 'grip') {
+    return GRIP_KEYS.map((k, i) => ({
+      id: k.id, row: k.y, col: i, w: 1, x: k.x, y: k.y,
+      finger: k.finger, hand: k.hand,
+    }));
+  }
   const stagger = geometry === 'row';
   const colY = geometry === 'column' ? COL_Y : null;
   const want = new Set(extras);
@@ -106,6 +133,20 @@ function colsFrom(...maps) {
  */
 export function buildBoard({ rows, subRows = null, geometry = 'row' }) {
   if (!rows || !rows.length) return null;
+
+  // グリップは2段だけ。1段目に左手5キー、2段目に右手5キーの印字を書く
+  if (geometry === 'grip') {
+    const left = [...(rows[0] ?? '')];
+    const right = [...(rows[1] ?? '')];
+    const sub = { L: [...((subRows && subRows[0]) ?? '')], R: [...((subRows && subRows[1]) ?? '')] };
+    return placeKeys('grip').map(k => {
+      const n = Number(k.id[1]) - 1;
+      const l = (k.hand === 'L' ? left : right)[n] ?? '';
+      const s = sub[k.hand][n] ?? '';
+      return { ...k, l: l === '　' ? '' : l, s: s && s !== '　' ? s : '', dim: 0 };
+    });
+  }
+
   const withSpace = rows.length >= 5 && rows[4].trim() !== '';
   return placeKeys(geometry, { extras: withSpace ? ['space'] : [] }).map(k => {
     if (k.col === null) return { ...k, l: rows[4].trim(), s: '', dim: 0 };
