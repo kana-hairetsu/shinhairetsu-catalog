@@ -100,7 +100,7 @@ def main():
     for k, n in count.items():
         hands['thumb' if k in ('space', 'henkan') else ('L' if k in left else 'R')] += n
     labels = {v: k for k, v in UN.items()}
-    labels.update({'q': '小', 't': '←', 'y': '→', 'u': 'BS', 'space': 'シフト', 'henkan': '変換'})
+    labels.update({'q': '小', 't': '←', 'y': '→', 'u': '', 'space': 'スペース（シフト）', 'henkan': '変換'})
     subs = {v: k for k, v in SH.items()}
     heat_path = os.path.join(ROOT, 'src/data/heat.json')
     heat = json.load(open(heat_path, encoding='utf-8'))

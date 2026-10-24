@@ -158,20 +158,39 @@ export function buildBoard({ rows, subRows = null, geometry = 'row' }) {
       s: s && s !== '　' ? s : '',
       dim: k.row === 0 && /[0-9]/.test(l) ? 1 : 0,
     };
-  })
-    // 配列図は10列までを基本とし、11列目より右は印字があるときだけ描く
-    .filter(k => k.col === null || k.col < 10 || k.l || k.s);
+  });
+  return tidy(keys, k => !!(k.l || k.s));
+}
 
-  // スペースキーは印字が収まる幅にして、文字キーの左右中央に置く
-  const sp = keys.find(k => k.col === null);
-  if (sp) {
-    const finger = keys.filter(k => k.col !== null);
-    const left = Math.min(...finger.map(k => k.x));
-    const right = Math.max(...finger.map(k => k.x + k.w));
-    sp.w = Math.max(2.6, Math.min(5, [...sp.l].length * 0.45 + 0.6));
-    sp.x = +((left + right - sp.w) / 2).toFixed(3);
+/* 親指キーの並び順（左から）。シフトキーは左右の端に置く */
+const THUMB_ORDER = ['lthumb', 'muhenkan', 'space', 'henkan', 'kana', 'rthumb'];
+
+/**
+ * 配列図・ヒートマップ・動画で共通の仕上げ。
+ *   ・文字キーは10列までを基本とし、11列目より右は印字か打鍵があるときだけ描く
+ *   ・親指キーは使うものだけを1組にまとめ、文字キーの左右中央に置く。
+ *     スペースキーは刻印が収まる幅まで広げる
+ */
+function tidy(keys, keep) {
+  const out = keys.filter(k => k.col === null || k.col < 10 || keep(k));
+  const finger = out.filter(k => k.col !== null);
+  if (!finger.length) return out;
+  const left = Math.min(...finger.map(k => k.x));
+  const right = Math.max(...finger.map(k => k.x + k.w));
+  const thumbs = THUMB_ORDER.map(id => out.find(k => k.id === id)).filter(Boolean);
+  const sp = thumbs.find(k => k.id === 'space');
+  if (sp) sp.w = Math.max(2.6, Math.min(5, [...(sp.l || '')].length * 0.45 + 0.6));
+  if (thumbs.length) {
+    const GAP = 0.1;
+    const total = thumbs.reduce((a, k) => a + k.w, 0) + GAP * (thumbs.length - 1);
+    let x = (left + right - total) / 2;
+    thumbs.forEach(k => { k.x = +x.toFixed(3); x += k.w + GAP; });
   }
-  return keys;
+  const rs = out.find(k => k.id === 'rshift');
+  if (rs) rs.x = +(right - rs.w).toFixed(3);
+  const ls = out.find(k => k.id === 'lshift');
+  if (ls) ls.x = +left.toFixed(3);
+  return out;
 }
 
 /**
@@ -181,7 +200,7 @@ export function buildBoard({ rows, subRows = null, geometry = 'row' }) {
 export function boardFromLabels(labels, subs = {}, geometry = 'row', used = null) {
   const usedMap = used ? Object.fromEntries([...used].map(id => [id, ''])) : null;
   const extras = extrasFrom(labels, subs, usedMap);
-  return placeKeys(geometry, { extras }).map(k => {
+  const keys = placeKeys(geometry, { extras }).map(k => {
     const assigned = labels[k.id];
     const l = assigned ?? DEFAULT_CAPS[k.id] ?? '';
     return {
@@ -192,6 +211,8 @@ export function boardFromLabels(labels, subs = {}, geometry = 'row', used = null
       dim: assigned === undefined ? 1 : (k.row === 0 && /[0-9]/.test(l) ? 1 : 0),
     };
   });
+  const usedSet = new Set(used ?? []);
+  return tidy(keys, k => labels[k.id] !== undefined || !!subs[k.id] || usedSet.has(k.id));
 }
 
 export function boardSize(keys) {
