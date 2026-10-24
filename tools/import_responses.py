@@ -222,10 +222,10 @@ def convert(path):
         elif len(genres) > 1:
             warn.append(f"{name}：入力方式が複数あります（{g(r,'genre')}）。{genres[0]} を採用しました")
 
+        kb = g(r, "keyboard")
         if "10キー" in keys_label(g(r, "phys_keys")) or "専用" in kb:
             warn.append(f"{name}：専用機の可能性があります。geometry を grip にするかご確認ください")
 
-        kb = g(r, "keyboard")
         geo = next((v for k, v in GEOMETRY.items() if k in kb), "")
         if not geo and kb:
             warn.append(f"{name}：想定キーボード「{kb}」から並びを判定できません。geometry を手で入れてください")

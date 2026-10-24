@@ -8,6 +8,9 @@ import { boardFromLabels } from '../lib/keyboard.js';
 
 const { ids = [], geometries = [], title = 'タイピングのようす' } = Astro.props;
 const mainColor = (HEAT[ids[0]] && HEAT[ids[0]].color) || '#1B3A5C';
+/* 漢字直接入力系はジャンル色が同時押しの臙脂と同じなので、単打だけ明るくして見分ける */
+const SINGLE_ALT = '#C07A84';
+const singleColor = mainColor.toUpperCase() === '#8E3B46' ? SINGLE_ALT : mainColor;
 const uid = 'tp' + Math.random().toString(36).slice(2, 8);
 
 /* 盤面はここで組み立てて渡す。配列図・ヒートマップと同じ関数を使うので並びが揃う */
@@ -16,7 +19,7 @@ const boards = ids.map((id, i) => {
   return h ? boardFromLabels(h.labels, h.subs, geometries[i] ?? 'row', Object.keys(h.heat)) : [];
 });
 ---
-<section class="player tp" id={uid} style={`--gc:${mainColor}`}>
+<section class="player tp" id={uid} style={`--gc:${mainColor};--single:${singleColor}`}>
   <h2 class="mincho">{title}</h2>
   <p class="src">
     夏目漱石『吾輩は猫である』の冒頭を打ったときの動きです。<b>どの配列も同じ時刻に打ち終わります</b>。
@@ -33,14 +36,16 @@ const boards = ids.map((id, i) => {
       <button class="ghost dur" data-s="360">360秒</button>
     </span>
     <span class="set"><span class="lbl">速さ</span>
+      <button class="ghost spd" data-x="0.1">×0.1</button>
       <button class="ghost spd" data-x="0.5">×0.5</button>
       <button class="ghost spd on" data-x="1">×1</button>
       <button class="ghost spd" data-x="2">×2</button>
     </span>
     <span class="eff">実際の長さ <b data-role="eff">180</b> 秒</span>
     <span class="legend">
-      <span><i style="background:var(--gc)"></i>単打</span>
+      <span><i style="background:var(--single)"></i>単打</span>
       <span><i style="background:var(--chord)"></i>同時押し／裏レイヤーの印字</span>
+      <span data-role="kanleg" hidden><i style="background:#33479C"></i>漢直（盤面の刻印が漢字面に変わります）</span>
     </span>
   </div>
 
@@ -52,6 +57,8 @@ const boards = ids.map((id, i) => {
 (async () => {
   const root = document.getElementById(uid);
   const U = 29.4, KW = 27, KH = 27, CHORD = '#8E3B46';
+  const KAN = '#33479C', FACE_BG = '#EEF0F8', SINGLE_ALT = '#C07A84';
+  const singleOf = c => (c || '').toUpperCase() === CHORD ? SINGLE_ALT : c;
   const fmt = n => n.toLocaleString('ja-JP');
   const $ = r => root.querySelector(`[data-role="${r}"]`);
 
@@ -78,6 +85,7 @@ const boards = ids.map((id, i) => {
       const x = 1 + k.x * U, y = 1 + k.y * U, kw = k.w * U - (U - KW), cx = (x + kw / 2).toFixed(1);
       s += `<rect id="${uid}-${gi}-${k.id}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${kw.toFixed(1)}"
              height="${KH}" rx="2.5" fill="#fff" stroke="${k.dim ? '#C8C7BF' : '#B4B3AB'}"/>`;
+      s += `<g id="${uid}-${gi}-${k.id}-n">`;
       if (k.s) {
         s += `<text x="${cx}" y="${(y + 11).toFixed(1)}" font-size="9.5" text-anchor="middle"
                font-family="serif" fill="${CHORD}" opacity=".85">${k.s}</text>`;
@@ -87,6 +95,10 @@ const boards = ids.map((id, i) => {
         s += `<text x="${cx}" y="${(y + KH / 2 + 4.4).toFixed(1)}" font-size="${k.l.length > 1 ? 11 : 12.5}"
                text-anchor="middle" font-family="serif" fill="${k.dim ? '#A5A49C' : L.color}">${k.l}</text>`;
       }
+      s += `</g>`;
+      if (L.layers) s += `<text id="${uid}-${gi}-${k.id}-f" x="${cx}" y="${(y + KH / 2 + 4.6).toFixed(1)}"
+               font-size="13" text-anchor="middle" font-family="serif" font-weight="700"
+               fill="#1F2A44" display="none"></text>`;
     });
     return s + '</svg>';
   };
@@ -95,6 +107,7 @@ const boards = ids.map((id, i) => {
     <section class="panel" style="--gc:${L.color}">
       <h3>${L.name}</h3><div class="g">${L.genre}</div>
       <div class="kbd">${board(L, i)}</div>
+      ${L.layers ? `<div class="lay" id="${uid}-lay${i}">かな（薙刀式）</div>` : ''}
       <div class="prog"><i id="${uid}-p${i}"></i></div>
       <div class="cap">お題文 ${fmt(META.clip_chars)}字（全${fmt(L.clip.actions)}アクション）／ 1打 <span id="${uid}-ms${i}">—</span></div>
       <div class="nums">
@@ -107,13 +120,41 @@ const boards = ids.map((id, i) => {
 
   const KEYMAP = LAY.map(L => Object.fromEntries(L.keys.map(k => [k.id, k])));
   const lit = LAY.map(() => []);
+  const face = LAY.map(() => null);
+  const baseFill = (i, id) => face[i] && id in LAY[i].layers[face[i]] ? FACE_BG : '#fff';
   const clear = i => {
     lit[i].forEach(k => {
       const e = document.getElementById(`${uid}-${i}-${k.id}`);
-      if (e) { e.setAttribute('fill', '#fff'); e.setAttribute('stroke', k.dim ? '#C8C7BF' : '#B4B3AB'); }
+      if (e) { e.setAttribute('fill', baseFill(i, k.id)); e.setAttribute('stroke', k.dim ? '#C8C7BF' : '#B4B3AB'); }
+      const f = document.getElementById(`${uid}-${i}-${k.id}-f`);
+      if (f) f.setAttribute('fill', '#1F2A44');
     });
     lit[i] = [];
   };
+
+  /** 漢直のアクション中は、盤面の刻印をその漢字面に差し替える */
+  const ALPHA = [...'qwertyuiopasdfghjkl;zxcvbnm,./'];
+  const setFace = (i, Lid) => {
+    const L = LAY[i];
+    if (!L.layers || face[i] === Lid) return;
+    face[i] = Lid;
+    const m = Lid ? L.layers[Lid] : null;
+    ALPHA.forEach(id => {
+      const n = document.getElementById(`${uid}-${i}-${id}-n`);
+      const f = document.getElementById(`${uid}-${i}-${id}-f`);
+      const r = document.getElementById(`${uid}-${i}-${id}`);
+      if (!n || !f || !r) return;
+      const t = m ? (m[id] ?? '') : '';
+      n.setAttribute('display', m ? 'none' : 'inline');
+      f.setAttribute('display', m ? 'inline' : 'none');
+      f.textContent = t;
+      f.setAttribute('font-size', t.length > 1 ? 8.5 : 13);
+      r.setAttribute('fill', m && t ? FACE_BG : '#fff');
+    });
+    const lay = document.getElementById(`${uid}-lay${i}`);
+    if (lay) { lay.textContent = m ? (L.layer_names?.[Lid] ?? '漢字面') : 'かな（薙刀式）'; lay.classList.toggle('on', !!m); }
+  };
+  if (LAY.some(L => L.layers)) $('kanleg').hidden = false;
 
   const applyTiming = () => {
     DUR = base / speed;
@@ -132,11 +173,14 @@ const boards = ids.map((id, i) => {
     LAY.forEach((L, i) => {
       const n = L.actions.length, idx = Math.min(Math.floor(p * n), n - 1), a = L.actions[idx];
       clear(i);
-      const col = a.k.length > 1 ? CHORD : L.color;
+      setFace(i, a.L ?? null);
+      const col = a.L ? KAN : (a.k.length > 1 ? CHORD : singleOf(L.color));
       a.k.forEach(id => {
         const k = KEYMAP[i][id]; if (!k) return;
         const e = document.getElementById(`${uid}-${i}-${id}`);
         if (e) { e.setAttribute('fill', col); e.setAttribute('stroke', col); lit[i].push(k); }
+        const f = document.getElementById(`${uid}-${i}-${id}-f`);
+        if (f) f.setAttribute('fill', '#fff');
       });
       let keys = 0, ch = 0;
       for (let j = 0; j <= idx; j++) { keys += L.actions[j].k.length; if (L.actions[j].k.length > 1) ch++; }
@@ -175,7 +219,7 @@ const boards = ids.map((id, i) => {
   function reset() {
     cancelAnimationFrame(raf); running = false; t0 = null; pausedAt = 0; lastEl = 0; lastCi = -1;
     LAY.forEach((L, i) => {
-      clear(i);
+      clear(i); setFace(i, null);
       ['k', 'c', 'a'].forEach(s => document.getElementById(`${uid}-n${i}${s}`).textContent = '0');
       document.getElementById(`${uid}-p${i}`).style.width = '0';
     });
@@ -247,6 +291,8 @@ const boards = ids.map((id, i) => {
 .tp .panel .g{font-size:11.5px;color:var(--gc);padding:0 16px 8px;letter-spacing:.06em}
 .tp .kbd{padding:0 12px 10px}
 .tp .kbd svg{display:block;width:100%;height:auto}
+.tp .lay{font-size:11px;color:var(--ink-soft);padding:0 16px 8px;min-height:1.6em;letter-spacing:.04em}
+.tp .lay.on{color:#33479C;font-weight:700}
 .tp .prog{height:4px;background:var(--paper-2);margin:0 12px}
 .tp .prog i{display:block;height:100%;background:var(--gc);width:0}
 .tp .cap{font-size:11px;color:var(--ink-soft);padding:10px 16px 0}
