@@ -46,6 +46,20 @@ const scale = (labels, i) => labels.map((t, j) => ({ t, on: j === i }));
           </figure>
         )}
 
+        {l.keymapMore.length > 0 && (
+          <section class="more">
+            <h2 class="mincho">そのほかのレイヤー</h2>
+            <div class="more-grid">
+              {l.keymapMore.map(m => (
+                <figure class="fig sub">
+                  <Keyboard rows={m.rows} geometry={l.geometry} color={g.color} label={`${l.name}：${m.title}`} />
+                  <figcaption>{m.title}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </section>
+        )}
+
         <p class="lead mincho">{l.q31}</p>
         {l.q32 && <p class="supp">{l.q32}</p>}
 
@@ -139,6 +153,9 @@ const scale = (labels, i) => labels.map((t, j) => ({ t, on: j === i }));
 .fig{background:#fff;border:1px solid var(--rule);padding:20px 22px 14px;margin-bottom:32px}
 .fig figcaption{font-size:12px;color:var(--ink-soft);margin-top:10px;
   border-top:1px solid var(--paper-2);padding-top:9px}
+.more{margin-bottom:32px}
+.more-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.fig.sub{margin-bottom:0;padding:14px 14px 10px}
 .lead{font-size:21px;line-height:1.8;font-weight:500;margin-bottom:16px}
 .supp{font-size:15px;margin-bottom:40px}
 

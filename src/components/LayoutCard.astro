@@ -20,7 +20,7 @@ const { layout: l, color } = Astro.props;
 
   <div class="tags">
     {l.phys_keys && <span class="tag key">{l.phys_keys}</span>}
-    {l.shift && <span class="tag">{l.shift}</span>}
+    {l.shiftShort && <span class="tag">{l.shiftShort}</span>}
     {l.chord && <span class="tag">同時打鍵{l.chord}</span>}
     {l.q21 !== '' && <span class="tag">習得 {['短め','普通','長め'][l.learnIndex]}</span>}
   </div>

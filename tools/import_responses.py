@@ -6,7 +6,7 @@
 
     python tools/import_responses.py 回答.csv --merge
         → src/data/layouts.csv に取り込む。フォームから取れない列
-          （id / keymap / keymap_sub / figure / anim）は既存の値をそのまま残す。
+          （id / keymap / keymap_sub / figure / anim / shift_short / keymap_more）は既存の値をそのまま残す。
 
 設問の文言が多少変わっても動くよう、列は見出しの先頭一致で探している。
 """
@@ -18,10 +18,10 @@ COLS = ["id", "name", "kana", "genre", "author", "year", "version", "url",
         "resources", "proxy", "consent", "chord", "shift", "os", "software",
         "phys_keys", "thumb", "keyboard", "geometry", "keymap", "keymap_sub",
         "figure", "anim", "q11", "q12", "q13", "q21", "q21c", "q22", "q23",
-        "q31", "q32", "q4", "updated"]
+        "q31", "q32", "q4", "updated", "shift_short", "keymap_more"]
 
 # フォームから取れない、手で育てる列。--merge のとき既存値を守る
-KEEP = ["id", "keymap", "keymap_sub", "figure", "anim"]
+KEEP = ["id", "keymap", "keymap_sub", "figure", "anim", "shift_short", "keymap_more"]
 
 # ── 見出しの探し方（先頭一致。前後の空白は無視） ──────────────────────
 FIND = {
@@ -254,6 +254,7 @@ def convert(path):
             "phys_keys": keys_label(g(r, "phys_keys")), "thumb": g(r, "thumb"),
             "keyboard": join_multi(kb, " / "), "geometry": geo,
             "keymap": "", "keymap_sub": "", "figure": "", "anim": "",
+            "shift_short": "", "keymap_more": "",
             "q11": g(r, "q11"), "q12": g(r, "q12"),
             "q13": index_of(g(r, "q13"), AIM),
             "q21": index_of(g(r, "q21"), LEARN), "q21c": g(r, "q21c"),
@@ -337,7 +338,7 @@ def main():
         records, added, updated = merge(a.target, records)
         write(a.target, records)
         print(f"\n{a.target} を更新しました（新規 {added}件 / 更新 {updated}件）")
-        print("※ id・keymap・keymap_sub・figure・anim は既存の値を残しています")
+        print("※ id・keymap・keymap_sub・figure・anim・shift_short・keymap_more は既存の値を残しています")
     else:
         write(a.out, records)
         print(f"\n{a.out} に書き出しました")

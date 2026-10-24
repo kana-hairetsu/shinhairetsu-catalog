@@ -29,6 +29,15 @@ function shape(r) {
     year: r.year ? Number(r.year) : null,
     keymapRows: r.keymap ? r.keymap.split('|') : null,
     keymapSubRows: r.keymap_sub ? r.keymap_sub.split('|') : null,
+    // 詳細ページにだけ載せる追加のレイヤー。「見出し^段|段|…」を ; で区切って並べる
+    keymapMore: r.keymap_more
+      ? r.keymap_more.split(';').filter(x => x.includes('^')).map(x => {
+          const [title, rows] = x.split('^');
+          return { title: title.trim(), rows: rows.split('|') };
+        })
+      : [],
+    // 一覧カードに出すシフト方式。長い場合だけ shift_short に省略形を書く
+    shiftShort: r.shift_short || r.shift,
     resourceList: r.resources
       ? r.resources.split(';').filter(Boolean).map(x => {
           const [title, href] = x.split('^');
