@@ -148,7 +148,7 @@ export function buildBoard({ rows, subRows = null, geometry = 'row' }) {
   }
 
   const withSpace = rows.length >= 5 && rows[4].trim() !== '';
-  return placeKeys(geometry, { extras: withSpace ? ['space'] : [] }).map(k => {
+  const keys = placeKeys(geometry, { extras: withSpace ? ['space'] : [] }).map(k => {
     if (k.col === null) return { ...k, l: rows[4].trim(), s: '', dim: 0 };
     const l = [...(rows[k.row] ?? '')][k.col] ?? '';
     const s = [...((subRows && subRows[k.row]) ?? '')][k.col] ?? '';
@@ -158,7 +158,20 @@ export function buildBoard({ rows, subRows = null, geometry = 'row' }) {
       s: s && s !== '　' ? s : '',
       dim: k.row === 0 && /[0-9]/.test(l) ? 1 : 0,
     };
-  });
+  })
+    // 配列図は10列までを基本とし、11列目より右は印字があるときだけ描く
+    .filter(k => k.col === null || k.col < 10 || k.l || k.s);
+
+  // スペースキーは印字が収まる幅にして、文字キーの左右中央に置く
+  const sp = keys.find(k => k.col === null);
+  if (sp) {
+    const finger = keys.filter(k => k.col !== null);
+    const left = Math.min(...finger.map(k => k.x));
+    const right = Math.max(...finger.map(k => k.x + k.w));
+    sp.w = Math.max(2.6, Math.min(5, [...sp.l].length * 0.45 + 0.6));
+    sp.x = +((left + right - sp.w) / 2).toFixed(3);
+  }
+  return keys;
 }
 
 /**
