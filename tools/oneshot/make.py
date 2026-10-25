@@ -48,9 +48,9 @@ def main():
     layers = {k: {} for k in ('tan', 'V', 'M', 'mid', 'bot')}
     for ch, (kind, key, _) in TABLE.items():
         layers[LAYER[kind]][key] = ch
-    layers['tan']['v'] = layers['tan']['m'] = '前置'
+    layers['tan']['v'] = layers['tan']['m'] = '☆'
     layers['V']['v'] = layers['M']['m'] = '×'
-    names = {'tan': '主漢字面・単打（変換＋キー）',
+    names = {'tan': '主漢字面・単打（変換＋キー）　☆で二打の面へ',
              'V': '主漢字面・変換＋V のあと（左：同手／右：逆手）',
              'M': '主漢字面・変換＋M のあと（左：逆手／右：同手）',
              'mid': '機能漢字面・同時1（中段3キー＋逆手）',
@@ -71,7 +71,9 @@ def main():
             o = {'c': pos[max(a['u'])], 'k': a['keys']}
             if 'mode' in a:
                 if a.get('pre'):
-                    o['L'] = 'V' if 'v' in a['keys'] else 'M'
+                    # 変換＋☆（V／M）の時点では、まだ単打の面にいる。
+                    # ☆を押して二打の面へ移り、次のアクションで文字キーを押す
+                    o['L'] = 'tan'
                 else:
                     o['L'] = LAYER[TABLE[a['out']][0]]
             out.append(o)

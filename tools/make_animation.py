@@ -197,7 +197,10 @@ def main():
 
     print(f"集計 {len(full)}字 ／ 動画 {len(clip)}字\n")
     print(f'{"id":<12}{"配列":<16}{"アクション":>10}{"打鍵":>9}{"同時押し":>9}{"左右":>12}')
+    # 設定にない配列（tools/oneshot などで別に作るもの）の項目は残す
     heat_all = {}
+    if os.path.exists(a.heat_out):
+        heat_all = json.load(open(a.heat_out, encoding="utf-8"))
     for c in cfg:
         if c["mode"] == "chord":
             # 専用機（左右5キー）。1文字＝1アクションなので、エンジンを通さず直接数える

@@ -24,26 +24,73 @@ def k2h(c):
     return chr(o - 0x60) if 0x30A1 <= o <= 0x30F6 else c
 
 # ---- 1. お題文の整形 ----------------------------------------------------
+# ワンショット漢直は混ぜ書き変換を使わない。語の中に表に無い漢字が1字でもあれば、
+# その語はまるごとひらがなで打つ（「名前」→「なまえ」。「な前」とは打たない）。
+# 語の区切りは MeCab で取り、接頭辞・接尾辞・続く数詞は前後の語にまとめる
+# 数詞に続く助数詞もまとめる（「第一」「一度」「人間中」などを1語として扱う）。
+import fugashi
+_tagger = fugashi.Tagger()
+
+def is_kanji(c):
+    return ('\u4e00' <= c <= '\u9fff') or c in '々〆'
+
+def word_ids(text):
+    """文字位置ごとの語番号"""
+    toks, pos = [], 0
+    for w in _tagger(text):
+        k = text.find(w.surface, pos)
+        if k < 0:
+            continue
+        f = w.feature
+        toks.append([k, k + len(w.surface), f.pos1 or '', f.pos2 or '', f.pos3 or ''])
+        pos = k + len(w.surface)
+    merged = []
+    for t in toks:
+        if merged:
+            p = merged[-1]
+            if (p[2] == '接頭辞' or t[2] == '接尾辞'
+                    or (p[3] == '数詞' and (t[3] == '数詞' or t[4] == '助数詞可能'))) and p[1] == t[0]:
+                p[1] = t[1]
+                p[2], p[3], p[4] = t[2], t[3], t[4]
+                continue
+        merged.append(list(t))
+    ids = [-1] * len(text)
+    for n, (a, b, *_) in enumerate(merged):
+        for i in range(a, b):
+            ids[i] = n
+    return ids
+
 def build_units():
     d = json.load(open(os.path.join(WORK, 'aligned.json'), encoding='utf-8'))
     lines = []
     for al in d['aligned']:
+        clean = ''.join(x[1] for x in al)
+        ids = word_ids(clean)
+        bad = set()
+        for i, c in enumerate(clean):
+            if is_kanji(c) and c not in TABLE:
+                bad.add(ids[i])
         units = []   # (表示文字, 種別, 打つかな or 漢字)
+        p = 0
+        prev_kanji = False
         for x in al:
             if x[0] == 'C':
                 ch = x[1]
                 units.append({'t': ch, 'k': 'kana', 'kana': k2h(ch)})
+                p += 1
+                prev_kanji = False
                 continue
             run, rd = x[1], x[2]
-            sup = [c in TABLE for c in run]
-            if all(not s for s in sup):
+            keep = [c in TABLE and ids[p + i] not in bad for i, c in enumerate(run)]
+            p += len(run)
+            if not any(keep):
                 for c in rd:
                     units.append({'t': c, 'k': 'yomi', 'kana': c, 'src': run})
+                prev_kanji = False
                 continue
             segs = [rd] if len(run) == 1 else (SPLIT_FIX.get((run, rd)) or split(run, rd)[0])
-            prev_kanji = False
-            for c, seg in zip(run, segs):
-                ok = c in TABLE and (c != '々' or prev_kanji)
+            for c, seg, ok in zip(run, segs, keep):
+                ok = ok and (c != '々' or prev_kanji)
                 if ok:
                     units.append({'t': c, 'k': 'kanji', 'kana': None, 'yomi': seg})
                     prev_kanji = True
