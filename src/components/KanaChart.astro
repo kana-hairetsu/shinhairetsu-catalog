@@ -1,0 +1,158 @@
+---
+/**
+ * 組み合わせ入力（かむ配列など）の全かな表。
+ * tools/layouts/<id>.json の _gyou（左手＝行）・_dan（右手＝段）・_sub（拗音など）と map から、
+ * 実際に割り当てのある文字だけを並べる。動画・ヒートマップと同じデータを使うので食い違わない。
+ *
+ * ●○の並びは配列図と同じ：左手は外側から（小指→親指）、右手は内側から（親指→小指）。
+ */
+interface Props { data: any; color?: string }
+const { data, color = 'var(--gc)' } = Astro.props;
+
+const LEFT = ['l1', 'l2', 'l3', 'l4', 'l5'];
+const RIGHT = ['r1', 'r2', 'r3', 'r4', 'r5'];
+const DAN = ['あ', 'い', 'う', 'え', 'お'];
+const GYOU = ['あ', 'か', 'さ', 'た', 'な', 'は', 'ま', 'や', 'ら', 'わ',
+              'が', 'ざ', 'だ', 'ば', 'ぱ', 'ぁ'].filter(g => g in data._gyou);
+const SUB = ['ゃ', 'ゅ', 'ょ'].filter(s => s in data._sub);
+const OTHER = Object.keys(data._sub).filter(s => !SUB.includes(s));
+
+const norm = spec => spec.split('+').filter(Boolean).sort().join('+');
+// 同じ組み合わせに複数の文字があるときは、先に出てきた（＝基本の）文字を採る
+const byChord = {};
+for (const [ch, spec] of Object.entries(data.map)) {
+  const k = norm(spec);
+  if (!(k in byChord) || ch.length < byChord[k].length) byChord[k] = ch;
+}
+const look = (...specs) => byChord[norm(specs.join('+'))] ?? '';
+
+const dots = (spec, ids) => {
+  const on = new Set(spec.split('+'));
+  return ids.map(id => on.has(id));
+};
+
+const rows = GYOU.map(g => ({
+  g, dots: dots(data._gyou[g], LEFT),
+  cells: DAN.map(d => look(data._gyou[g], data._dan[d])),
+}));
+const youon = GYOU.map(g => ({
+  g, dots: dots(data._gyou[g], LEFT),
+  cells: SUB.map(s => look(data._gyou[g], data._sub[s])),
+})).filter(r => r.cells.some(c => c.length > 1 || r.g === 'あ'));
+const total = Object.keys(data.map).length;
+---
+<section class="kana-chart" style={`--kc:${color}`}>
+  <h2 class="mincho">すべてのかなの打ち方</h2>
+  <div class="src">左手の組み合わせで行（子音）を、右手の組み合わせで段（母音）を決め、
+    両手を同時に押して1文字を入力します。●が押すキーです。
+    並びは配列図と同じく、左手は小指→親指、右手は親指→小指の順です。</div>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th class="corner">左手＼右手</th>
+          {DAN.map(d => (
+            <th><span class="dots">{dots(data._dan[d], RIGHT).map((on, i) =>
+              <i class:list={[{ on }, { gr: i === 0 }]} />)}</span>{d}段</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(r => (
+          <tr>
+            <th><span class="dots">{r.dots.map((on, i) =>
+              <i class:list={[{ on }, { gl: i === 4 }]} />)}</span>{r.g === 'ぁ' ? '小書き' : `${r.g}行`}</th>
+            {r.cells.map(c => <td class:list={[{ x: !c }]}>{c}</td>)}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  {SUB.length > 0 && (
+    <>
+      <h3>拗音（右手の組み合わせを替える）</h3>
+      <div class="scroll">
+        <table class="narrow">
+          <thead>
+            <tr>
+              <th class="corner">左手＼右手</th>
+              {SUB.map(s => (
+                <th><span class="dots">{dots(data._sub[s], RIGHT).map((on, i) =>
+                  <i class:list={[{ on }, { gr: i === 0 }]} />)}</span>{s}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {youon.map(r => (
+              <tr>
+                <th><span class="dots">{r.dots.map((on, i) =>
+                  <i class:list={[{ on }, { gl: i === 4 }]} />)}</span>{r.g === 'あ' ? '左手なし' : `${r.g}行`}</th>
+                {r.cells.map(c => <td class:list={[{ x: !c }]}>{c}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )}
+
+  {OTHER.length > 0 && (
+    <>
+      <h3>右手だけで打つ記号</h3>
+      <div class="scroll">
+        <table class="narrow">
+          <tbody>
+            {OTHER.map(s => (
+              <tr>
+                <th><span class="dots">{dots(data._sub[s], RIGHT).map((on, i) =>
+                  <i class:list={[{ on }, { gr: i === 0 }]} />)}</span></th>
+                <td>{s === 'ー' ? 'ー（長音）' : s === 'っ' ? 'っ（促音）' : s}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )}
+  <p class="note">割り当てのあるかな・記号は全{total}字です。空欄は割り当てがありません。</p>
+</section>
+
+<style>
+.kana-chart{margin-bottom:40px}
+.kana-chart h2{font-size:20px;font-weight:700;letter-spacing:.05em;
+  border-bottom:2px solid var(--ink);padding-bottom:7px;margin-bottom:6px}
+.kana-chart .src{font-size:11.5px;color:var(--ink-soft);margin-bottom:18px}
+.kana-chart h3{font-size:14px;font-weight:700;margin:26px 0 8px}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;contain:inline-size}
+table{border-collapse:collapse;background:#fff;width:100%;min-width:520px}
+table.narrow{width:auto;min-width:0}
+th,td{border:1px solid var(--rule);text-align:center;padding:6px 8px}
+thead th{background:var(--paper-2);font-weight:400;font-size:13px;line-height:1.5}
+tbody th{background:var(--paper-2);font-weight:400;font-size:13px;white-space:nowrap;
+  text-align:left;line-height:1.5}
+td{font-family:"Shippori Mincho B1",serif;font-size:19px;min-width:3em}
+td.x{background:var(--paper-2)}
+th.corner{font-size:11.5px;color:var(--ink-soft)}
+.dots{display:flex;gap:3px;justify-content:center;margin-bottom:3px}
+tbody th .dots{justify-content:flex-start;display:inline-flex;margin:0 10px 0 0;vertical-align:-1px}
+.dots i{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--rule-strong);display:block}
+.dots i.on{background:var(--kc);border-color:var(--kc)}
+.dots i.gl{margin-left:4px}
+.dots i.gr{margin-right:4px}
+.note{font-size:12px;color:var(--ink-soft);margin-top:10px}
+@media (max-width:560px){
+  table{min-width:0}
+  th,td{padding:5px 1px}
+  tbody th{padding-left:4px}
+  td{font-size:16px;min-width:0}
+  thead th,tbody th{font-size:11px}
+  th.corner{font-size:10px}
+  tbody th .dots{margin-right:3px}
+  .dots{gap:2px}
+  .dots i{width:7px;height:7px;border-width:1.2px}
+  .dots i.gl{margin-left:3px}
+  .dots i.gr{margin-right:3px}
+}
+</style>
