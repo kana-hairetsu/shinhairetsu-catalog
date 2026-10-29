@@ -1,7 +1,8 @@
 ---
 /**
  * 組み合わせ入力（かむ配列など）の全かな表。
- * tools/layouts/<id>.json の _gyou（左手＝行）・_dan（右手＝段）・_sub（拗音など）と map から、
+ * tools/layouts/<id>.json の _gyou（左手＝行）・_dan（右手＝段）・_sub（拗音）・_extra（長音など）・
+ * _ops（BS などの操作。文字ではないので map に無く、動画・打鍵数にも数えない）と map から、
  * 実際に割り当てのある文字だけを並べる。動画・ヒートマップと同じデータを使うので食い違わない。
  *
  * ●○の並びは配列図と同じ：左手は外側から（小指→親指）、右手は内側から（親指→小指）。
@@ -15,7 +16,11 @@ const DAN = ['あ', 'い', 'う', 'え', 'お'];
 const GYOU = ['あ', 'か', 'さ', 'た', 'な', 'は', 'ま', 'や', 'ら', 'わ',
               'が', 'ざ', 'だ', 'ば', 'ぱ', 'ぁ'].filter(g => g in data._gyou);
 const SUB = ['ゃ', 'ゅ', 'ょ'].filter(s => s in data._sub);
-const OTHER = Object.keys(data._sub).filter(s => !SUB.includes(s));
+const EXTRA = Object.entries(data._extra ?? {});
+const OPS = Object.entries(data._ops ?? {});
+const NOTE = data._kana_note ?? {};
+const NAME = { 'ー': 'ー（長音）', 'っ': 'っ（促音）' };
+const split = spec => ({ L: dots(spec, LEFT), R: dots(spec, RIGHT) });
 
 const norm = spec => spec.split('+').filter(Boolean).sort().join('+');
 // 同じ組み合わせに複数の文字があるときは、先に出てきた（＝基本の）文字を採る
@@ -38,7 +43,7 @@ const rows = GYOU.map(g => ({
 const youon = GYOU.map(g => ({
   g, dots: dots(data._gyou[g], LEFT),
   cells: SUB.map(s => look(data._gyou[g], data._sub[s])),
-})).filter(r => r.cells.some(c => c.length > 1 || r.g === 'あ'));
+})).filter(r => r.cells.some(c => c.length > 1));
 const total = Object.keys(data.map).length;
 ---
 <section class="kana-chart" style={`--kc:${color}`}>
@@ -63,12 +68,16 @@ const total = Object.keys(data.map).length;
           <tr>
             <th><span class="dots">{r.dots.map((on, i) =>
               <i class:list={[{ on }, { gl: i === 4 }]} />)}</span>{r.g === 'ぁ' ? '小書き' : `${r.g}行`}</th>
-            {r.cells.map(c => <td class:list={[{ x: !c }]}>{c}</td>)}
+            {r.cells.map(c => <td class:list={[{ x: !c }]}>{c}{NOTE[c] && <sup>※</sup>}</td>)}
           </tr>
         ))}
       </tbody>
     </table>
   </div>
+  {Object.keys(NOTE).length > 0 && (
+    <p class="note">※{Object.keys(NOTE).join('・')}は、ローマ字の {Object.values(NOTE).join('・')} を送ります。
+      IMEによっては「{Object.keys(NOTE).join('」「')}」になります。</p>
+  )}
 
   {SUB.length > 0 && (
     <>
@@ -98,25 +107,48 @@ const total = Object.keys(data.map).length;
     </>
   )}
 
-  {OTHER.length > 0 && (
+  {EXTRA.length > 0 && (
     <>
-      <h3>右手だけで打つ記号</h3>
+      <h3>長音・促音（両手で押す）</h3>
       <div class="scroll">
         <table class="narrow">
+          <thead><tr><th class="corner">左手</th><th class="corner">右手</th><th class="corner">入力</th></tr></thead>
           <tbody>
-            {OTHER.map(s => (
+            {EXTRA.map(([s, spec]) => { const d = split(spec); return (
               <tr>
-                <th><span class="dots">{dots(data._sub[s], RIGHT).map((on, i) =>
+                <th><span class="dots">{d.L.map((on, i) =>
+                  <i class:list={[{ on }, { gl: i === 4 }]} />)}</span></th>
+                <th><span class="dots">{d.R.map((on, i) =>
                   <i class:list={[{ on }, { gr: i === 0 }]} />)}</span></th>
-                <td>{s === 'ー' ? 'ー（長音）' : s === 'っ' ? 'っ（促音）' : s}</td>
+                <td>{NAME[s] ?? s}</td>
               </tr>
-            ))}
+            ); })}
           </tbody>
         </table>
       </div>
     </>
   )}
-  <p class="note">割り当てのあるかな・記号は全{total}字です。空欄は割り当てがありません。</p>
+
+  {OPS.length > 0 && (
+    <>
+      <h3>右手だけで打つ操作</h3>
+      <div class="scroll">
+        <table class="narrow">
+          <tbody>
+            {OPS.map(([s, spec]) => (
+              <tr>
+                <th><span class="dots">{dots(spec, RIGHT).map((on, i) =>
+                  <i class:list={[{ on }, { gr: i === 0 }]} />)}</span></th>
+                <td class="op">{s}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="note">BS・Space・Enterは、ほかの配列と同じく、動画・打鍵数・アクション数には含めていません。</p>
+    </>
+  )}
+  <p class="note">割り当てのあるかな・記号は全{total}字です。</p>
 </section>
 
 <style>
@@ -142,6 +174,8 @@ tbody th .dots{justify-content:flex-start;display:inline-flex;margin:0 10px 0 0;
 .dots i.gl{margin-left:4px}
 .dots i.gr{margin-right:4px}
 .note{font-size:12px;color:var(--ink-soft);margin-top:10px}
+td sup{font-size:10px;color:var(--ink-soft);margin-left:1px}
+td.op{font-family:inherit;font-size:15px;padding:6px 14px}
 @media (max-width:560px){
   table{min-width:0}
   th,td{padding:5px 1px}

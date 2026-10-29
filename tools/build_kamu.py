@@ -3,7 +3,7 @@
 
     python tools/build_kamu.py
 
-tools/layouts/kamu.seed.json の _gyou / _dan / _sub を読み、
+tools/layouts/kamu.seed.json の _gyou / _dan / _sub / _extra を読み、
 すべてのかなへの割り当てを展開して tools/layouts/kamu.json に書き出す。
 作者ご本人に確認していただくときは、このファイルをお渡しするとよい。
 """
@@ -18,7 +18,7 @@ TABLE = {
     "な": "なにぬねの", "は": "はひふへほ", "ま": "まみむめも",
     "や": "や、ゆんよ",     # や行い段＝「、」／や行え段＝「ん」
     "ら": "らりるれろ",
-    "わ": "わ 。 を",       # わ行う段＝「。」。い段・え段は割り当て無し
+    "わ": "わゐ。ゑを",     # わ行う段＝「。」。い段・え段は wi / we を送る（IMEによって「ゐ」「ゑ」）
     "が": "がぎぐげご", "ざ": "ざじずぜぞ", "だ": "だぢづでど",
     "ば": "ばびぶべぼ", "ぱ": "ぱぴぷぺぽ", "ぁ": "ぁぃぅぇぉ",
 }
@@ -47,9 +47,11 @@ def main():
         for small in ("ゃ", "ゅ", "ょ"):
             m[head + small] = chord(gyou[g], sub[small])
 
-    for ch, spec in sub.items():
+    # 長音・促音は左右の組み合わせ（ー＝や行＋右薬指・小指、っ＝た行＋右親指・人差指）
+    for ch, spec in seed.get("_extra", {}).items():
         m[ch] = chord(spec)
-    m["ゎ"] = chord(sub["ゃ"])
+    # 右手だけの BS・Space・Enter（_ops）は文字ではないので map に入れない。
+    # 動画・打鍵数・アクション数にも計上しない（他配列と同じ扱い）
 
     out = dict(seed)
     out["map"] = dict(sorted(m.items(), key=lambda x: (len(x[0]), x[0])))
