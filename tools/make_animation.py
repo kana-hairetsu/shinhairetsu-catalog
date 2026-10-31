@@ -36,7 +36,8 @@ def kana_labels(layout):
     shift_key = cnt.most_common(1)[0][0] if cnt else None
     base, sub = {}, {}
     for kana, spec in layout["map"].items():
-        if not isinstance(spec, str) or len(kana) != 1:
+        # 空欄（その配列では入力しない）は刻印にしない
+        if not isinstance(spec, str) or not spec or len(kana) != 1:
             continue
         parts = spec.split("+")
         if len(parts) == 1:
@@ -115,7 +116,7 @@ def actions_romaji(td, text, layout):
     return acts
 
 
-def actions_kana(td, text, layout):
+def actions_kana(td, text, layout, prefix=None):
     """keystrokes_kana の min_actions と同じ切り分けを、文字位置つきで再現する"""
     m = {k: v for k, v in layout["map"].items() if v}
     maxlen = max(len(k) for k in m)
@@ -140,7 +141,25 @@ def actions_kana(td, text, layout):
         if st:
             seq.insert(0, (prev, st))
         pos = prev
-    return [{"c": ci, "k": mods + [main]} for ci, st in seq for main, mods in st]
+    out = []
+    for ci, st in seq:
+        for j, (main, mods) in enumerate(st):
+            a = {"c": ci, "k": mods + [main]}
+            # 前置シフトのキーに続く打鍵は、そのシフト面の文字として光らせる
+            if prefix and j > 0 and not st[j - 1][1] and st[j - 1][0] in prefix:
+                a["L"] = st[j - 1][0]
+            out.append(a)
+    return out
+
+
+def prefix_faces(layout, prefix):
+    """前置シフトの面。[シフトキー, キー] の2打で出る文字を、キーごとに拾う"""
+    faces = {p: {} for p in prefix}
+    for kana, spec in layout["map"].items():
+        if isinstance(spec, list) and len(spec) == 2 and spec[0] in prefix \
+                and "+" not in spec[0] + spec[1]:
+            faces[spec[0]].setdefault(spec[1], kana)
+    return faces
 
 
 def summarize(acts):
@@ -220,7 +239,8 @@ def main():
         else:
             lay = json.load(open(os.path.join(a.engine, c["json"]), encoding="utf-8"))
             labels, subs = kana_labels(lay)
-            acts = actions_kana(td, clip, lay)
+            prefix = c.get("prefix") or {}
+            acts = actions_kana(td, clip, lay, prefix)
             full_strokes = td.keystrokes_kana(full, lay)
             ref = summarize_strokes(td.keystrokes_kana(clip, lay))
         if c["mode"] != "chord":
@@ -238,6 +258,14 @@ def main():
                 "layout": {"id": c["id"], "name": c["name"], "genre": c["genre"],
                            "color": c["color"],
                            "actions": acts, "full": sf, "clip": sc}}
+        if c["mode"] == "kana" and c.get("prefix"):
+            # 動画の盤面を、シフトキーのあとだけシフト面の刻印に差し替える
+            data["layout"].update({
+                "layers": prefix_faces(lay, c["prefix"]),
+                "layer_names": c["prefix"],
+                "base_name": c.get("base_name", "単打の面"),
+                "layer_legend": c.get("layer_legend", "シフト面の文字（盤面の刻印がシフト面に変わります）"),
+            })
         path = os.path.join(a.out, c["id"] + ".json")
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, separators=(",", ":"))

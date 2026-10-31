@@ -77,5 +77,20 @@
     "mode": "chord",
     "geometry": "grip",
     "json": "tools/layouts/kamu.json"
+  },
+  {
+    "id": "burichutoro",
+    "name": "ブリ中トロ配列",
+    "genre": "かな系",
+    "color": "#3D7268",
+    "mode": "kana",
+    "geometry": "ortho",
+    "json": "layouts/burichutoro.json",
+    "prefix": {
+      "d": "Dシフト面（D を押したあと）",
+      "k": "Kシフト面（K を押したあと）"
+    },
+    "base_name": "単打の面",
+    "layer_legend": "前置シフトのあとの打鍵（盤面の刻印がシフト面に変わります）"
   }
 ]

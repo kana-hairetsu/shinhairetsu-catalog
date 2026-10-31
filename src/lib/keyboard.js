@@ -131,6 +131,23 @@ function colsFrom(...maps) {
  *             5段目を書くとスペースキーの印字になる
  *   subRows … 裏レイヤー（シフト同時押し）の印字。省略可
  */
+/**
+ * 段の文字列をキーごとの印字に分ける。1文字＝1キーが基本で、
+ * 2文字以上を1つのキーに刷りたいときは {ます} のように波括弧で囲む。
+ */
+export function cells(row) {
+  const out = [];
+  const chars = [...(row ?? '')];
+  for (let i = 0; i < chars.length; i++) {
+    if (chars[i] === '{') {
+      const j = chars.indexOf('}', i + 1);
+      if (j > i) { out.push(chars.slice(i + 1, j).join('')); i = j; continue; }
+    }
+    out.push(chars[i]);
+  }
+  return out;
+}
+
 export function buildBoard({ rows, subRows = null, geometry = 'row' }) {
   if (!rows || !rows.length) return null;
 
@@ -150,8 +167,8 @@ export function buildBoard({ rows, subRows = null, geometry = 'row' }) {
   const withSpace = rows.length >= 5 && rows[4].trim() !== '';
   const keys = placeKeys(geometry, { extras: withSpace ? ['space'] : [] }).map(k => {
     if (k.col === null) return { ...k, l: rows[4].trim(), s: '', dim: 0 };
-    const l = [...(rows[k.row] ?? '')][k.col] ?? '';
-    const s = [...((subRows && subRows[k.row]) ?? '')][k.col] ?? '';
+    const l = cells(rows[k.row])[k.col] ?? '';
+    const s = cells(subRows && subRows[k.row])[k.col] ?? '';
     return {
       ...k,
       l: l === '　' ? '' : l,

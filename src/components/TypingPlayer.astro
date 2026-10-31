@@ -45,7 +45,7 @@ const boards = ids.map((id, i) => {
     <span class="legend">
       <span><i style="background:var(--single)"></i>単打</span>
       <span><i style="background:var(--chord)"></i>同時押し／裏レイヤーの印字</span>
-      <span data-role="kanleg" hidden><i style="background:#33479C"></i>漢直（盤面の刻印が漢字面に変わります）</span>
+      <span data-role="kanleg" hidden><i style="background:#33479C"></i><span data-role="kanlegtext">漢直（盤面の刻印が漢字面に変わります）</span></span>
     </span>
   </div>
 
@@ -107,7 +107,7 @@ const boards = ids.map((id, i) => {
     <section class="panel" style="--gc:${L.color}">
       <h3>${L.name}</h3><div class="g">${L.genre}</div>
       <div class="kbd">${board(L, i)}</div>
-      ${L.layers ? `<div class="lay" id="${uid}-lay${i}">かな（薙刀式）</div>` : ''}
+      ${L.layers ? `<div class="lay" id="${uid}-lay${i}">${L.base_name ?? 'かな（薙刀式）'}</div>` : ''}
       <div class="prog"><i id="${uid}-p${i}"></i></div>
       <div class="cap">お題文 ${fmt(META.clip_chars)}字（全${fmt(L.clip.actions)}アクション）／ 1打 <span id="${uid}-ms${i}">—</span></div>
       <div class="nums">
@@ -133,7 +133,7 @@ const boards = ids.map((id, i) => {
   };
 
   /** 漢直のアクション中は、盤面の刻印をその漢字面に差し替える */
-  const ALPHA = [...'qwertyuiopasdfghjkl;zxcvbnm,./'];
+  const ALPHA = [...'qwertyuiopasdfghjkl;zxcvbnm,./', '-', "'", '[', ']'];
   const setFace = (i, Lid) => {
     const L = LAY[i];
     if (!L.layers || face[i] === Lid) return;
@@ -152,9 +152,13 @@ const boards = ids.map((id, i) => {
       r.setAttribute('fill', m && t ? FACE_BG : '#fff');
     });
     const lay = document.getElementById(`${uid}-lay${i}`);
-    if (lay) { lay.textContent = m ? (L.layer_names?.[Lid] ?? '漢字面') : 'かな（薙刀式）'; lay.classList.toggle('on', !!m); }
+    if (lay) { lay.textContent = m ? (L.layer_names?.[Lid] ?? '漢字面') : (L.base_name ?? 'かな（薙刀式）'); lay.classList.toggle('on', !!m); }
   };
-  if (LAY.some(L => L.layers)) $('kanleg').hidden = false;
+  if (LAY.some(L => L.layers)) {
+    $('kanleg').hidden = false;
+    const t = LAY.find(L => L.layer_legend)?.layer_legend;
+    if (t) $('kanlegtext').textContent = t;
+  }
 
   const applyTiming = () => {
     DUR = base / speed;
