@@ -95,6 +95,15 @@ export function placeKeys(geometry = 'row', { extras = [] } = {}) {
     keys.push({ id: k.id, row: k.row, col: null, w: k.w, x: k.x, y: k.row });
   });
 
+  // A の左（CapsLock の位置）。左右対称キーボードの左端の列に文字を置く配列で使う
+  if (want.has('caps')) {
+    keys.push({
+      id: 'caps', row: 2, col: null, w: 1,
+      x: +((stagger ? FINGER[2].x : 0) - 1).toFixed(3),
+      y: +(2 + (colY ? colY[0] : 0)).toFixed(3),
+    });
+  }
+
   // 中指列やShiftが枠の外へ出るので、左上が 0 になるよう全体をずらす
   const minX = Math.min(...keys.map(k => k.x));
   const minY = Math.min(...keys.map(k => k.y));
@@ -108,6 +117,7 @@ export function placeKeys(geometry = 'row', { extras = [] } = {}) {
 /** その配列が実際に使うキーだけを、追加分として拾う */
 function extrasFrom(...maps) {
   const ids = new Set();
+  if (maps.some(m => m && m.caps !== undefined)) ids.add('caps');
   EXTRA_KEYS.forEach(k => {
     if (maps.some(m => m && m[k.id] !== undefined)) ids.add(k.id);
   });
@@ -165,7 +175,19 @@ export function buildBoard({ rows, subRows = null, geometry = 'row' }) {
   }
 
   const withSpace = rows.length >= 5 && rows[4].trim() !== '';
-  const keys = placeKeys(geometry, { extras: withSpace ? ['space'] : [] }).map(k => {
+  // 中段の先頭に <：> のように書くと、A の左（caps）の印字になる
+  const outer = { l: '', s: '' };
+  const takeOuter = (row, key) => {
+    const m = /^<([^>]*)>/.exec(row ?? '');
+    if (!m) return row;
+    outer[key] = m[1] === '　' ? '' : m[1];
+    return row.slice(m[0].length);
+  };
+  rows = rows.map((r, i) => (i === 2 ? takeOuter(r, 'l') : r));
+  if (subRows) subRows = subRows.map((r, i) => (i === 2 ? takeOuter(r, 's') : r));
+  const extras = [...(withSpace ? ['space'] : []), ...(outer.l || outer.s ? ['caps'] : [])];
+  const keys = placeKeys(geometry, { extras }).map(k => {
+    if (k.id === 'caps') return { ...k, l: outer.l, s: outer.s, dim: 0 };
     if (k.col === null) return { ...k, l: rows[4].trim(), s: '', dim: 0 };
     const l = cells(rows[k.row])[k.col] ?? '';
     const s = cells(subRows && subRows[k.row])[k.col] ?? '';

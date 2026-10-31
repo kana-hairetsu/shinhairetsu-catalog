@@ -261,7 +261,8 @@ def main():
         if c["mode"] == "kana" and c.get("prefix"):
             # 動画の盤面を、シフトキーのあとだけシフト面の刻印に差し替える
             data["layout"].update({
-                "layers": prefix_faces(lay, c["prefix"]),
+                "layers": {p: {**f, **c.get("face_labels", {}).get(p, {})}
+                           for p, f in prefix_faces(lay, c["prefix"]).items()},
                 "layer_names": c["prefix"],
                 "base_name": c.get("base_name", "単打の面"),
                 "layer_legend": c.get("layer_legend", "シフト面の文字（盤面の刻印がシフト面に変わります）"),

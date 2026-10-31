@@ -133,7 +133,7 @@ const boards = ids.map((id, i) => {
   };
 
   /** 漢直のアクション中は、盤面の刻印をその漢字面に差し替える */
-  const ALPHA = [...'qwertyuiopasdfghjkl;zxcvbnm,./', '-', "'", '[', ']'];
+  const ALPHA = [...'qwertyuiopasdfghjkl;zxcvbnm,./', '-', "'", '[', ']', 'caps'];
   const setFace = (i, Lid) => {
     const L = LAY[i];
     if (!L.layers || face[i] === Lid) return;
