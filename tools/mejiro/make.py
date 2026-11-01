@@ -4,8 +4,8 @@
     python tools/mejiro/make.py --engine ../typing-distance
 
 メジロ式は速記なので、typing-distance のエンジン（1文字ずつ打つ前提）では計算できない。
-代わりに、本家のメジロ式エンジン（Rust）でお題文を打てるストローク列を探し、
-それを「どのキーを同時に押したか」の形に並べ替える。
+代わりに、作者の公式エンジン Mejiro_Engine（Rust）でお題文を打てるストローク列を探し、
+それを「どのキーを同時に押したか」の形に並べ替える。探し方は encoder/src/main.rs の冒頭を参照。
 
   1. tools/mejiro/encoder（Rust）がお題文をストローク列に直す
        → tools/mejiro/strokes_clip.json（動画 553字）

@@ -4,7 +4,6 @@ import Keyboard from '../../components/Keyboard.astro';
 import TypingPlayer from '../../components/TypingPlayer.astro';
 import Heatmap from '../../components/Heatmap.astro';
 import KanaChart from '../../components/KanaChart.astro';
-import StenoChart from '../../components/StenoChart.astro';
 import { LAYOUTS, genreOf, neighbours, scaleLabels, attribution, respondentNote } from '../../lib/data.js';
 
 export function getStaticPaths() {
@@ -21,10 +20,6 @@ const crumb = `<a href="/">カタログ</a> ／ <a href="/#${g.id}">${g.name}</a
 const CHORDS = import.meta.glob('../../../tools/layouts/*.json', { eager: true, import: 'default' });
 const chordData = Object.entries(CHORDS)
   .find(([p, d]) => p.endsWith(`/${l.id}.json`) && d?._gyou && d?.map)?.[1];
-
-// 速記の早見表（tools/<id>/chart.json）。本家エンジンで引いた表
-const STENO = import.meta.glob('../../../tools/*/chart.json', { eager: true, import: 'default' });
-const stenoData = Object.entries(STENO).find(([p]) => p.endsWith(`/${l.id}/chart.json`))?.[1];
 
 const scale = (labels, i) => labels.map((t, j) => ({ t, on: j === i }));
 ---
@@ -52,9 +47,9 @@ const scale = (labels, i) => labels.map((t, j) => ({ t, on: j === i }));
             <figcaption>
               配列図{l.figure ? '（作者ご提出）' : ''}
               {l.keyboard && `　${l.keyboard}を想定しています。`}
-              {l.keymapSubRows && (l.geometry === 'steno'
-                ? '　大きい英字がキーの名前、上の小さい文字はそのキーが受け持つ音です。#・S・U・* は2段ぶんの縦長キーです。'
-                : '　キーの下段が単打、上段の小さい文字がシフト同時押しです。')}
+              {l.geometry === 'steno'
+                ? '　英字はキーの名前（ストローク表記）です。#・S・U・* は2段ぶんの縦長キーです。'
+                : l.keymapSubRows && '　キーの下段が単打、上段の小さい文字がシフト同時押しです。'}
             </figcaption>
           </figure>
         )}
@@ -74,7 +69,6 @@ const scale = (labels, i) => labels.map((t, j) => ({ t, on: j === i }));
         )}
 
         {chordData && <KanaChart data={chordData} color={g.color} />}
-        {stenoData && <StenoChart data={stenoData} color={g.color} version={stenoData.version} />}
 
         <p class="lead mincho">{l.q31}</p>
         {l.q32 && <p class="supp">{l.q32}</p>}

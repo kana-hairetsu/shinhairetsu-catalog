@@ -50,7 +50,7 @@ const GRIP_KEYS = [
  * 速記（メジロ式）。左右とも「# S T/K Y/N I/A U」を2段に並べ、親指に n・t・k の3キー。
  * #・S・U（右は *・S・U）は2段ぶんの縦長キー。右手は左右対称に、内側の U から並ぶ。
  * キーIDは手（L/R）＋キー名。Ploverのストローク表記（TAk-SAn など）の文字と同じ。
- * 親指キーは指キーの下にまとめ、n を上段、t・k を下段に置く。
+ * 親指キーは指キーの下にまとめ、n（横2u）を上段、t・k を下段に置く。
  */
 const STENO_KEYS = [
   { id: 'L#', x: 0,   y: 0, h: 2, hand: 'L' },
@@ -59,7 +59,7 @@ const STENO_KEYS = [
   { id: 'LY', x: 3,   y: 0, hand: 'L' }, { id: 'LN', x: 3, y: 1, hand: 'L' },
   { id: 'LI', x: 4,   y: 0, hand: 'L' }, { id: 'LA', x: 4, y: 1, hand: 'L' },
   { id: 'LU', x: 5,   y: 0, h: 2, hand: 'L' },
-  { id: 'Ln', x: 4.5, y: 2.25, hand: 'L', thumb: true },
+  { id: 'Ln', x: 4,   y: 2.25, w: 2, hand: 'L', thumb: true },
   { id: 'Lt', x: 4,   y: 3.25, hand: 'L', thumb: true },
   { id: 'Lk', x: 5,   y: 3.25, hand: 'L', thumb: true },
   { id: 'RU', x: 6.6, y: 0, h: 2, hand: 'R' },
@@ -68,7 +68,7 @@ const STENO_KEYS = [
   { id: 'RT', x: 9.6, y: 0, hand: 'R' }, { id: 'RK', x: 9.6, y: 1, hand: 'R' },
   { id: 'RS', x: 10.6, y: 0, h: 2, hand: 'R' },
   { id: 'R*', x: 11.6, y: 0, h: 2, hand: 'R' },
-  { id: 'Rn', x: 7.1, y: 2.25, hand: 'R', thumb: true },
+  { id: 'Rn', x: 6.6, y: 2.25, w: 2, hand: 'R', thumb: true },
   { id: 'Rk', x: 6.6, y: 3.25, hand: 'R', thumb: true },
   { id: 'Rt', x: 7.6, y: 3.25, hand: 'R', thumb: true },
 ];
@@ -111,7 +111,7 @@ export function placeKeys(geometry = 'row', { extras = [] } = {}) {
   }
   if (geometry === 'steno') {
     return STENO_KEYS.map((k, i) => ({
-      id: k.id, row: Math.floor(k.y), col: i, w: 1, h: k.h ?? 1, x: k.x, y: k.y,
+      id: k.id, row: Math.floor(k.y), col: i, w: k.w ?? 1, h: k.h ?? 1, x: k.x, y: k.y,
       hand: k.hand, thumb: !!k.thumb,
     }));
   }

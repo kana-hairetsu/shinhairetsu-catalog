@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2024"
 publish = false
 
-# 変換規則は本家のエンジンをそのまま使う。
-# shinhairetsu-catalog と同じ階層に Plover_Mejiro を clone しておくこと
-#   git clone https://github.com/JEEBIS27/Plover_Mejiro
+# 変換規則は、作者の公式エンジン Mejiro_Engine をそのまま使う。
+# shinhairetsu-catalog と同じ階層に clone しておくこと
+#   git clone https://github.com/JEEBIS27/Mejiro_Engine
 [dependencies]
-mejiro-engine = { path = "../../../../Plover_Mejiro/vendor/mejiro-engine" }
+mejiro-engine = { path = "../../../../Mejiro_Engine" }
 
 [profile.release]
 opt-level = 3

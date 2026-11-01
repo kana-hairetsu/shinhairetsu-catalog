@@ -183,11 +183,10 @@ python tools/make_animation.py --engine ../typing-distance
 速記は1回のストロークで何文字も出るため、typing-distance では計算できません。
 `tools/mejiro/` に専用の仕組みがあります。
 
-- `encoder/`（Rust）… 本家のメジロ式エンジン（Plover_Mejiro）を使って、お題文を打てるストローク列を探す。
-  各位置で「次のストロークまで含めて最も先へ進めるもの」を選び、最後に先頭から打ち直して
-  お題文と一致することを確かめる
+- `encoder/`（Rust）… 作者の公式エンジン Mejiro_Engine を使って、お題文を打てるストローク列を探す。
+  エンジンの状態（直前の母音・助詞の文脈）を引き継ぎながら最少のストローク数を求め、
+  最後に先頭から打ち直してお題文と一致することを確かめる。探し方の詳細は `encoder/src/main.rs` の冒頭
 - `strokes_clip.json` `strokes_full.json` … 探した結果（動画用・集計用）。保存してあるので Rust がなくても作り直せる
-- `chart.json` … 詳細ページの「基本入力の早見表」。エンジンで引いた表（`cargo run --release --bin chart`）
 - `make.py` … `public/anim/mejiro.json` と `heat.json` を書き出す
 
 ```
@@ -195,7 +194,8 @@ python tools/mejiro/make.py --engine ../typing-distance --skip-encode
 ```
 
 `--skip-encode` を外すと、ストローク列から探し直します。そのときは Rust と、
-このフォルダと同じ階層に `git clone https://github.com/JEEBIS27/Plover_Mejiro` が必要です。
+このフォルダと同じ階層に `git clone https://github.com/JEEBIS27/Mejiro_Engine` が必要です。
+エンジンの規則が更新されたら、clone し直してから探し直してください。
 
 配列図の `keymap` は、左手12キー（`#STKNYIAUntk`）と右手12キー（`STKNYIAUntk*`）を `|` で区切って書きます。
 空けるキーは `{}` と書きます（全角スペースは CSV の読み込みで消えるため）。
