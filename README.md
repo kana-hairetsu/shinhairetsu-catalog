@@ -88,7 +88,7 @@ python tools/import_responses.py 回答.csv --merge
 | `consent` | 作者ご本人の了承。`あり` / `なし` / `連絡がつかないため未確認`。記録用で、ページには表示されない |
 | `chord` `shift` | 同時打鍵の有無、シフト方式 |
 | `os` `software` `phys_keys` `thumb` `keyboard` | 動作環境 |
-| `geometry` | `row`（ロウスタッガード）／ `ortho`（オーソリニア）／ `column`（カラムスタッガード）。**配列図・ヒートマップ・動画の3つすべてがこの指定に従う** |
+| `geometry` | `row`（ロウスタッガード）／ `ortho`（オーソリニア）／ `column`（カラムスタッガード）／ `grip`（左右5キーの専用機）／ `steno`（速記。左右12キー）。**配列図・ヒートマップ・動画の3つすべてがこの指定に従う** |
 | `keymap` | 配列図をデータから描く場合の印字。下記参照 |
 | `keymap_sub` | 裏レイヤー（シフト同時押し）の印字。同上 |
 | `figure` | 作者提出の配列図。`public/figures/` に置いたファイル名 |
@@ -177,6 +177,29 @@ python tools/make_animation.py --engine ../typing-distance
 
 シフト面の刻印は、配列定義 JSON の `["d", "s"]` のような2打の定義から自動で拾います。
 作者の配列図と刻印を揃えたいキーは、`"face_labels": {"d": {"a": "ょう"}}` のように上書きできます。
+
+### 速記の配列（メジロ式）
+
+速記は1回のストロークで何文字も出るため、typing-distance では計算できません。
+`tools/mejiro/` に専用の仕組みがあります。
+
+- `encoder/`（Rust）… 本家のメジロ式エンジン（Plover_Mejiro）を使って、お題文を打てるストローク列を探す。
+  各位置で「次のストロークまで含めて最も先へ進めるもの」を選び、最後に先頭から打ち直して
+  お題文と一致することを確かめる
+- `strokes_clip.json` `strokes_full.json` … 探した結果（動画用・集計用）。保存してあるので Rust がなくても作り直せる
+- `chart.json` … 詳細ページの「基本入力の早見表」。エンジンで引いた表（`cargo run --release --bin chart`）
+- `make.py` … `public/anim/mejiro.json` と `heat.json` を書き出す
+
+```
+python tools/mejiro/make.py --engine ../typing-distance --skip-encode
+```
+
+`--skip-encode` を外すと、ストローク列から探し直します。そのときは Rust と、
+このフォルダと同じ階層に `git clone https://github.com/JEEBIS27/Plover_Mejiro` が必要です。
+
+配列図の `keymap` は、左手12キー（`#STKNYIAUntk`）と右手12キー（`STKNYIAUntk*`）を `|` で区切って書きます。
+空けるキーは `{}` と書きます（全角スペースは CSV の読み込みで消えるため）。
+動画では、いま押しているストロークの表記（`TAk-SAn` など）と、それで出る文字が盤面の下に出ます。
 
 ### 盤面に出せるキー
 

@@ -56,7 +56,7 @@ const boards = ids.map((id, i) => {
 <script define:vars={{ uid, ids, boards }}>
 (async () => {
   const root = document.getElementById(uid);
-  const U = 29.4, KW = 27, KH = 27, CHORD = '#8E3B46';
+  const U = 29.4, KW = 27, CHORD = '#8E3B46';
   const KAN = '#33479C', FACE_BG = '#EEF0F8', SINGLE_ALT = '#C07A84';
   const singleOf = c => (c || '').toUpperCase() === CHORD ? SINGLE_ALT : c;
   const fmt = n => n.toLocaleString('ja-JP');
@@ -79,17 +79,18 @@ const boards = ids.map((id, i) => {
 
   const board = (L, gi) => {
     const w = Math.max(...L.keys.map(k => k.x + k.w)) * U + 2;
-    const h = (Math.max(...L.keys.map(k => k.y)) + 1) * U + 2;
+    const h = Math.max(...L.keys.map(k => k.y + (k.h ?? 1))) * U + 2;
     let s = `<svg viewBox="0 0 ${w.toFixed(1)} ${h.toFixed(1)}" xmlns="http://www.w3.org/2000/svg">`;
     L.keys.forEach(k => {
       const x = 1 + k.x * U, y = 1 + k.y * U, kw = k.w * U - (U - KW), cx = (x + kw / 2).toFixed(1);
+      const KH = (k.h ?? 1) * U - (U - KW);   // 縦長キー（速記の S・U など）は2段ぶん
       s += `<rect id="${uid}-${gi}-${k.id}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${kw.toFixed(1)}"
-             height="${KH}" rx="2.5" fill="#fff" stroke="${k.dim ? '#C8C7BF' : '#B4B3AB'}"/>`;
+             height="${KH.toFixed(1)}" rx="2.5" fill="#fff" stroke="${k.dim ? '#C8C7BF' : '#B4B3AB'}"/>`;
       s += `<g id="${uid}-${gi}-${k.id}-n">`;
       if (k.s) {
-        s += `<text x="${cx}" y="${(y + 11).toFixed(1)}" font-size="9.5" text-anchor="middle"
+        s += `<text x="${cx}" y="${(y + KH / 2 - 2.5).toFixed(1)}" font-size="9.5" text-anchor="middle"
                font-family="serif" fill="${CHORD}" opacity=".85">${k.s}</text>`;
-        if (k.l) s += `<text x="${cx}" y="${(y + 23).toFixed(1)}" font-size="12" text-anchor="middle"
+        if (k.l) s += `<text x="${cx}" y="${(y + KH / 2 + 9.5).toFixed(1)}" font-size="12" text-anchor="middle"
                font-family="serif" fill="${L.color}">${k.l}</text>`;
       } else if (k.l) {
         s += `<text x="${cx}" y="${(y + KH / 2 + 4.4).toFixed(1)}" font-size="${k.l.length > 1 ? 11 : 12.5}"
@@ -108,6 +109,7 @@ const boards = ids.map((id, i) => {
       <h3>${L.name}</h3><div class="g">${L.genre}</div>
       <div class="kbd">${board(L, i)}</div>
       ${L.layers ? `<div class="lay" id="${uid}-lay${i}">${L.base_name ?? 'かな（薙刀式）'}</div>` : ''}
+      ${L.actions[0]?.s ? `<div class="stk" id="${uid}-stk${i}"><span class="s">—</span><span class="o"></span></div>` : ''}
       <div class="prog"><i id="${uid}-p${i}"></i></div>
       <div class="cap">お題文 ${fmt(META.clip_chars)}字（全${fmt(L.clip.actions)}アクション）／ 1打 <span id="${uid}-ms${i}">—</span></div>
       <div class="nums">
@@ -173,7 +175,7 @@ const boards = ids.map((id, i) => {
     if (t0 === null) t0 = ts - pausedAt;
     const el = Math.min(ts - t0, DUR); lastEl = el;
     const p = el / DUR;
-    let ci = 0;
+    let ci = 0, cn = 1;
     LAY.forEach((L, i) => {
       const n = L.actions.length, idx = Math.min(Math.floor(p * n), n - 1), a = L.actions[idx];
       clear(i);
@@ -192,19 +194,23 @@ const boards = ids.map((id, i) => {
       document.getElementById(`${uid}-n${i}c`).textContent = fmt(ch);
       document.getElementById(`${uid}-n${i}a`).textContent = fmt(idx + 1);
       document.getElementById(`${uid}-p${i}`).style.width = (p * 100) + '%';
-      if (i === 0) ci = a.c;
+      // 速記：いま押しているストロークの表記と、それで出る文字
+      const stk = document.getElementById(`${uid}-stk${i}`);
+      if (stk && a.s) { stk.firstChild.textContent = a.s; stk.lastChild.textContent = '→ ' + a.o; }
+      if (i === 0) { ci = a.c; cn = a.n ?? 1; }
     });
-    if (ci !== lastCi) { lastCi = ci; paint(ci); }
+    if (ci !== lastCi) { lastCi = ci; paint(ci, cn); }
     if (el < DUR && running) raf = requestAnimationFrame(frame);
     else if (el >= DUR) { running = false; pausedAt = 0; t0 = null; $('play').textContent = 'もう一度'; }
   }
 
   /** お題文を打ち終わった位置まで塗り、打っている文字を枠の中ほどへ送る */
-  function paint(ci) {
+  /* n はその打鍵で出る文字数。速記のように1回で何文字も出る配列では、まとめて塗る */
+  function paint(ci, n = 1) {
     const T = META.text, box = $('ticker'), inner = $('tickerin');
     inner.innerHTML = `<span class="done">${T.slice(0, ci)}</span>`
-      + `<span class="cur">${T[ci] ?? ''}</span>`
-      + `<span class="todo">${T.slice(ci + 1)}</span>`;
+      + `<span class="cur">${T.slice(ci, ci + n)}</span>`
+      + `<span class="todo">${T.slice(ci + n)}</span>`;
     const cur = inner.querySelector('.cur');
     if (!cur) return;
 
@@ -224,6 +230,8 @@ const boards = ids.map((id, i) => {
     cancelAnimationFrame(raf); running = false; t0 = null; pausedAt = 0; lastEl = 0; lastCi = -1;
     LAY.forEach((L, i) => {
       clear(i); setFace(i, null);
+      const stk = document.getElementById(`${uid}-stk${i}`);
+      if (stk) { stk.firstChild.textContent = '—'; stk.lastChild.textContent = ''; }
       ['k', 'c', 'a'].forEach(s => document.getElementById(`${uid}-n${i}${s}`).textContent = '0');
       document.getElementById(`${uid}-p${i}`).style.width = '0';
     });
@@ -297,6 +305,9 @@ const boards = ids.map((id, i) => {
 .tp .kbd svg{display:block;width:100%;height:auto}
 .tp .lay{font-size:11px;color:var(--ink-soft);padding:0 16px 8px;min-height:1.6em;letter-spacing:.04em}
 .tp .lay.on{color:#33479C;font-weight:700}
+.tp .stk{display:flex;align-items:baseline;gap:10px;padding:0 16px 8px;min-height:1.9em;font-size:13px}
+.tp .stk .s{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;color:var(--gc);letter-spacing:.04em}
+.tp .stk .o{font-family:"Shippori Mincho B1",serif;color:var(--ink)}
 .tp .prog{height:4px;background:var(--paper-2);margin:0 12px}
 .tp .prog i{display:block;height:100%;background:var(--gc);width:0}
 .tp .cap{font-size:11px;color:var(--ink-soft);padding:10px 16px 0}

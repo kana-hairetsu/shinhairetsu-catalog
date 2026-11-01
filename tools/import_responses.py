@@ -142,7 +142,9 @@ def resources(v):
     s = none_to_blank(v)
     if not s or "^" in s:
         return s
-    urls = re.findall(r"https?://\S+", s)
+    # 「教材名（https://…）」のように括弧で囲まれていると、NFKC で半角になった
+    # 閉じ括弧がURLに付いてくるので落とす
+    urls = [u.rstrip(")]」") for u in re.findall(r"https?://\S+", s)]
     if not urls:
         return ""
     title = re.sub(r"https?://\S+", "", s).strip(" 　:：-　()（）") or "練習用の教材"

@@ -1,0 +1,14 @@
+[package]
+name = "mejiro-encode"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# 変換規則は本家のエンジンをそのまま使う。
+# shinhairetsu-catalog と同じ階層に Plover_Mejiro を clone しておくこと
+#   git clone https://github.com/JEEBIS27/Plover_Mejiro
+[dependencies]
+mejiro-engine = { path = "../../../../Plover_Mejiro/vendor/mejiro-engine" }
+
+[profile.release]
+opt-level = 3

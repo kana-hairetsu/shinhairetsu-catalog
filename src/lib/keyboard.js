@@ -46,9 +46,43 @@ const GRIP_KEYS = [
   { id: 'r5', x: 9.4, y: 0, finger: '小指',   hand: 'R' },
 ];
 
+/**
+ * 速記（メジロ式）。左右とも「# S T/K Y/N I/A U」を2段に並べ、親指に n・t・k の3キー。
+ * #・S・U（右は *・S・U）は2段ぶんの縦長キー。右手は左右対称に、内側の U から並ぶ。
+ * キーIDは手（L/R）＋キー名。Ploverのストローク表記（TAk-SAn など）の文字と同じ。
+ * 親指キーは指キーの下にまとめ、n を上段、t・k を下段に置く。
+ */
+const STENO_KEYS = [
+  { id: 'L#', x: 0,   y: 0, h: 2, hand: 'L' },
+  { id: 'LS', x: 1,   y: 0, h: 2, hand: 'L' },
+  { id: 'LT', x: 2,   y: 0, hand: 'L' }, { id: 'LK', x: 2, y: 1, hand: 'L' },
+  { id: 'LY', x: 3,   y: 0, hand: 'L' }, { id: 'LN', x: 3, y: 1, hand: 'L' },
+  { id: 'LI', x: 4,   y: 0, hand: 'L' }, { id: 'LA', x: 4, y: 1, hand: 'L' },
+  { id: 'LU', x: 5,   y: 0, h: 2, hand: 'L' },
+  { id: 'Ln', x: 4.5, y: 2.25, hand: 'L', thumb: true },
+  { id: 'Lt', x: 4,   y: 3.25, hand: 'L', thumb: true },
+  { id: 'Lk', x: 5,   y: 3.25, hand: 'L', thumb: true },
+  { id: 'RU', x: 6.6, y: 0, h: 2, hand: 'R' },
+  { id: 'RI', x: 7.6, y: 0, hand: 'R' }, { id: 'RA', x: 7.6, y: 1, hand: 'R' },
+  { id: 'RY', x: 8.6, y: 0, hand: 'R' }, { id: 'RN', x: 8.6, y: 1, hand: 'R' },
+  { id: 'RT', x: 9.6, y: 0, hand: 'R' }, { id: 'RK', x: 9.6, y: 1, hand: 'R' },
+  { id: 'RS', x: 10.6, y: 0, h: 2, hand: 'R' },
+  { id: 'R*', x: 11.6, y: 0, h: 2, hand: 'R' },
+  { id: 'Rn', x: 7.1, y: 2.25, hand: 'R', thumb: true },
+  { id: 'Rk', x: 6.6, y: 3.25, hand: 'R', thumb: true },
+  { id: 'Rt', x: 7.6, y: 3.25, hand: 'R', thumb: true },
+];
+/* 配列図の keymap に書く順。左手は「#STKNYIAUntk」、右手は「STKNYIAUntk*」で、
+   Ploverのストローク表記と同じ並び */
+const STENO_LEFT = ['L#', 'LS', 'LT', 'LK', 'LN', 'LY', 'LI', 'LA', 'LU', 'Ln', 'Lt', 'Lk'];
+const STENO_RIGHT = ['RS', 'RT', 'RK', 'RN', 'RY', 'RI', 'RA', 'RU', 'Rn', 'Rt', 'Rk', 'R*'];
+
 export const KEY_UNIT = 29.4;
 export const KEY_SIZE = 27;
-export const GEOMETRIES = ['row', 'ortho', 'column', 'grip'];
+/** キーの描画上の高さ。縦長キー（速記の S・U など）は h 段ぶんになる */
+export const keyHeight = k => (k.h ?? 1) * KEY_UNIT - (KEY_UNIT - KEY_SIZE);
+export const GEOMETRIES = ['row', 'ortho', 'column', 'grip', 'steno'];
+export const STENO_IDS = STENO_KEYS.map(k => k.id);
 export const GRIP_IDS = GRIP_KEYS.map(k => k.id);
 export const GRIP_HAND = Object.fromEntries(GRIP_KEYS.map(k => [k.id, k.hand]));
 export const GRIP_THUMBS = GRIP_KEYS.filter(k => k.finger === '親指').map(k => k.id);
@@ -73,6 +107,12 @@ export function placeKeys(geometry = 'row', { extras = [] } = {}) {
     return GRIP_KEYS.map((k, i) => ({
       id: k.id, row: k.y, col: i, w: 1, x: k.x, y: k.y,
       finger: k.finger, hand: k.hand,
+    }));
+  }
+  if (geometry === 'steno') {
+    return STENO_KEYS.map((k, i) => ({
+      id: k.id, row: Math.floor(k.y), col: i, w: 1, h: k.h ?? 1, x: k.x, y: k.y,
+      hand: k.hand, thumb: !!k.thumb,
     }));
   }
   const stagger = geometry === 'row';
@@ -174,6 +214,21 @@ export function buildBoard({ rows, subRows = null, geometry = 'row' }) {
     });
   }
 
+  // 速記は2段だけ。1段目に左手12キー、2段目に右手12キーの印字を書く（STENO_LEFT / STENO_RIGHT の順）
+  if (geometry === 'steno') {
+    const pick = (list, i) => {
+      const lab = cells(list?.[i] ?? '');
+      return Object.fromEntries([...STENO_LEFT, ...STENO_RIGHT].map((id, j) => {
+        const v = j < 12 ? (i === 0 ? lab[j] : '') : (i === 1 ? lab[j - 12] : '');
+        return [id, v && v !== '　' ? v : ''];
+      }));
+    };
+    const L = { ...pick(rows, 0) }, S = { ...pick(subRows, 0) };
+    Object.entries(pick(rows, 1)).forEach(([k, v]) => { if (v) L[k] = v; });
+    Object.entries(pick(subRows, 1)).forEach(([k, v]) => { if (v) S[k] = v; });
+    return placeKeys('steno').map(k => ({ ...k, l: L[k.id] ?? '', s: S[k.id] ?? '', dim: 0 }));
+  }
+
   const withSpace = rows.length >= 5 && rows[4].trim() !== '';
   // 中段の先頭に <：> のように書くと、A の左（caps）の印字になる
   const outer = { l: '', s: '' };
@@ -237,6 +292,11 @@ function tidy(keys, keep) {
  * used には打鍵のあったキーIDを渡すと、割り当てが無くても盤面に含める。
  */
 export function boardFromLabels(labels, subs = {}, geometry = 'row', used = null) {
+  if (geometry === 'steno') {
+    return placeKeys('steno').map(k => ({
+      ...k, l: labels[k.id] ?? '', s: subs[k.id] ?? '', dim: labels[k.id] === undefined ? 1 : 0,
+    }));
+  }
   const usedMap = used ? Object.fromEntries([...used].map(id => [id, ''])) : null;
   const extras = extrasFrom(labels, subs, usedMap);
   const keys = placeKeys(geometry, { extras }).map(k => {
@@ -257,6 +317,6 @@ export function boardFromLabels(labels, subs = {}, geometry = 'row', used = null
 export function boardSize(keys) {
   return {
     w: Math.max(...keys.map(k => k.x + k.w)) * KEY_UNIT + 2,
-    h: (Math.max(...keys.map(k => k.y)) + 1) * KEY_UNIT + 2,
+    h: Math.max(...keys.map(k => k.y + (k.h ?? 1))) * KEY_UNIT + 2,
   };
 }
