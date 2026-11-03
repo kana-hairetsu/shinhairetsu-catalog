@@ -197,6 +197,15 @@ python tools/mejiro/make.py --engine ../typing-distance --skip-encode
 このフォルダと同じ階層に `git clone https://github.com/JEEBIS27/Mejiro_Engine` が必要です。
 エンジンの規則が更新されたら、clone し直してから探し直してください。
 
+詳細ページの「速記系らしい特徴的な入力」は `src/data/stroke_examples.json` に書きます。
+配列の id ごとに、ストローク表記（`stroke`）・出力（`out`）・説明（`note`）を並べると、
+押すキーを塗った盤面が1つずつ描かれます。追加・変更したら、出力が公式エンジンと合っているか確かめてください。
+
+```
+cd tools/mejiro/encoder
+cargo run --release --bin check_examples -- ../../../src/data/stroke_examples.json mejiro
+```
+
 配列図の `keymap` は、左手12キー（`#STKNYIAUntk`）と右手12キー（`STKNYIAUntk*`）を `|` で区切って書きます。
 空けるキーは `{}` と書きます（全角スペースは CSV の読み込みで消えるため）。
 動画では、いま押しているストロークの表記（`TAk-SAn` など）と、それで出る文字が盤面の下に出ます。

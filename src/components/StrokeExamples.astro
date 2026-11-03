@@ -1,0 +1,59 @@
+---
+/**
+ * 速記系の運指例。src/data/stroke_examples.json の <id> を読み、
+ * 1ストロークごとに「押すキーを塗った盤面」「ストローク表記」「出力」「説明」を並べる。
+ * 出力は tools/mejiro/encoder の check_examples で公式エンジンと照合してある。
+ */
+import Keyboard from './Keyboard.astro';
+import EXAMPLES from '../data/stroke_examples.json';
+
+interface Props { id: string; rows: string[]; geometry?: string; color?: string; name?: string }
+const { id, rows, geometry = 'steno', color = 'var(--gc)', name = '' } = Astro.props;
+const d = EXAMPLES[id];
+
+/** 'TAk-SAn' → ['LT','LA','Lk','RS','RA','Rn']。ハイフンを省いた "*" "#" も読む */
+const keysOf = stroke => {
+  const [l, r] = stroke.includes('-') ? stroke.split('-') : [stroke.replace(/\*/g, ''), stroke.replace(/[^*]/g, '')];
+  return [...[...l].map(c => 'L' + c), ...[...r].map(c => (c === '*' ? 'R*' : 'R' + c))];
+};
+---
+{d && (
+  <section class="strokes" style={`--sc:${color}`}>
+    <h2 class="mincho">{d.title}</h2>
+    <div class="src">{d.lead}</div>
+    <div class="ex-grid">
+      {d.items.map(it => (
+        <figure class="ex">
+          <div class="out mincho">{it.out}</div>
+          <Keyboard rows={rows} geometry={geometry} color={color} lit={keysOf(it.stroke)}
+                    label={`${name}で「${it.out}」を打つストローク ${it.stroke}`} />
+          <figcaption>
+            <code>{it.stroke}</code>
+            <p>{it.note}</p>
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+    {d.source && (
+      <p class="note">出典：<a href={d.source.url}>{d.source.title}</a>。英字はストローク表記で、<code>-</code> の左が左手、右が右手です。</p>
+    )}
+  </section>
+)}
+
+<style>
+.strokes{margin-bottom:40px}
+.strokes h2{font-size:20px;font-weight:700;letter-spacing:.05em;
+  border-bottom:2px solid var(--ink);padding-bottom:7px;margin-bottom:6px}
+.strokes .src{font-size:11.5px;color:var(--ink-soft);margin-bottom:16px;line-height:1.8}
+.ex-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.ex{background:#fff;border:1px solid var(--rule);border-top:3px solid var(--sc);
+  padding:12px 14px 12px;display:flex;flex-direction:column;gap:8px;margin:0}
+.ex .out{font-size:19px;font-weight:700;line-height:1.4}
+.ex :global(svg){display:block;width:100%;height:auto}
+.ex figcaption{border-top:1px solid var(--paper-2);padding-top:8px}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;color:var(--sc);
+  letter-spacing:.03em;font-size:14px}
+.ex p{font-size:12.5px;line-height:1.75;margin-top:3px;color:var(--ink)}
+.note{font-size:12px;color:var(--ink-soft);margin-top:10px;line-height:1.8}
+.note code{font-size:12px}
+</style>
