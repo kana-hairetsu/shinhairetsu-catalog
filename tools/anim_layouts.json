@@ -61,6 +61,27 @@
     }
   },
   {
+    "id": "merlin",
+    "name": "Merlin",
+    "genre": "ローマ字系",
+    "color": "#1B3A5C",
+    "mode": "romaji",
+    "geometry": "row",
+    "rows": [
+      "gmhrwqyvl;",
+      "skntduiaoe",
+      "zpjbfcx,./"
+    ],
+    "num": "1234567890'",
+    "extra": {
+      "-": "'",
+      "「": "[",
+      "」": "]",
+      "！": "rshift+1",
+      "？": "lshift+/"
+    }
+  },
+  {
     "id": "battou",
     "name": "抜刀式",
     "genre": "かな系",

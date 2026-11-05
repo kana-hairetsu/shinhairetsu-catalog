@@ -138,7 +138,7 @@ const scale = (labels, i) => labels.map((t, j) => ({ t, on: j === i }));
         {l.resourceList.length > 0 && (
           <div class="box">
             <h2>練習用の教材</h2>
-            <ul>{l.resourceList.map(r => <li><a href={r.href}>{r.title}</a></li>)}</ul>
+            <ul>{l.resourceList.map(r => <li>{r.href ? <a href={r.href}>{r.title}</a> : r.title}</li>)}</ul>
           </div>
         )}
         {l.url && <div class="box"><a class="go" href={l.url}>公式サイト（配布・解説）</a></div>}
