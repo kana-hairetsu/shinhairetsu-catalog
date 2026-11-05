@@ -18,7 +18,7 @@ const { title, description = '日本語をより快適に打つための配列�
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Shippori+Mincho+B1:wght@500;700&display=swap" />
+    href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Shippori+Mincho+B1:wght@500;700&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap" />
 </head>
 <body>
   {!indexable && (
@@ -30,7 +30,14 @@ const { title, description = '日本語をより快適に打つための配列�
   <nav class="gnav">
     <div class="wrap">
       <a class="logo" href="/">新配列カタログ</a>
-      {crumb && <div class="crumb" set:html={crumb} />}
+      {crumb
+        ? <div class="crumb" set:html={crumb} />
+        : (
+          <ul class="gmenu" aria-label="メインメニュー">
+            <li><a href="/#genres">配列一覧</a></li>
+            <li><a href="/#apply">掲載の申し込み</a></li>
+          </ul>
+        )}
     </div>
   </nav>
 

@@ -15,13 +15,18 @@ a{color:var(--ink)}
 img{max-width:100%;height:auto;display:block}
 .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
 .mincho{font-family:"Shippori Mincho B1",serif}
+/* タイトル用の見出し書体（トップページの見出しと各配列ページのタイトル） */
+.head-font{font-family:"Zen Kaku Gothic New","BIZ UDPGothic",sans-serif}
 
 /* ── サイト共通ヘッダ・フッタ ── */
 .gnav{border-bottom:1px solid var(--rule);padding:14px 0}
 .gnav .wrap{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.gnav .logo{font-family:"Shippori Mincho B1",serif;font-size:17px;font-weight:700;
+.gnav .logo{font-family:"Zen Kaku Gothic New","BIZ UDPGothic",sans-serif;font-size:17px;font-weight:700;
   text-decoration:none;letter-spacing:.05em}
 .crumb{font-size:12.5px;color:var(--ink-soft)}
+.gmenu{list-style:none;display:flex;flex-wrap:wrap;gap:4px 22px;font-size:13.5px}
+.gmenu a{text-decoration:none}
+.gmenu a:hover{text-decoration:underline}
 .crumb a{color:var(--ink-soft)}
 .gfoot{border-top:1px solid var(--rule);margin-top:64px;padding:28px 0 56px;
   font-size:12.5px;color:var(--ink-soft)}

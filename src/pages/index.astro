@@ -6,15 +6,19 @@ import { byGenre, LAYOUTS } from '../lib/data.js';
 const sections = byGenre().filter(g => g.layouts.length > 0);
 const asOf = '2026年10月1日';
 ---
-<Base title="新配列カタログ">
+<Base title="新配列カタログ" description="日本語をもっと快適に入力しよう！脱QWERTYを考え始めた人のための、新しい入力方法（論理配列）を集めたカタログです。">
   <main class="wrap">
-    <header class="site-head">
-      <h1 class="mincho">新配列カタログ</h1>
-      <p class="lede">日本語をより快適に打つための配列を集めました。ジャンル別に掲載しています。</p>
+    <header class="hero">
+      <img class="hero-logo" src="/logo-keycaps.png" width="880" height="450"
+        alt="「A」と「あ」のキーキャップ" />
+      <h1 class="head-font">新配列カタログ</h1>
+      <p class="catch head-font">日本語をもっと快適に入力しよう！</p>
+      <p class="lede">脱QWERTYを考え始めた人のための<br />新しい入力方法（論理配列）を集めたカタログです</p>
+      <a class="cta" href="#genres">配列を見てみる</a>
       <p class="asof">{asOf}現在　全{LAYOUTS.length}配列を掲載</p>
     </header>
 
-    <nav class="index" aria-label="ジャンル">
+    <nav class="index" id="genres" aria-label="ジャンル">
       <h2>ジャンルから探す</h2>
       <ol>
         {sections.map(g => (
@@ -32,7 +36,7 @@ const asOf = '2026年10月1日';
       <section class="genre" id={g.id} style={`--gc:${g.color}`}>
         <div class="genre-h">
           <div>
-            <h2 class="mincho">{g.name}</h2>
+            <h2 class="head-font">{g.name}</h2>
             <div class="c">{g.layouts.length}配列</div>
           </div>
           <p>{g.desc}</p>
@@ -42,24 +46,36 @@ const asOf = '2026年10月1日';
         </div>
       </section>
     ))}
+
+    <section class="apply" id="apply" aria-labelledby="apply-h">
+      <div>
+        <h2 id="apply-h">掲載の申し込み</h2>
+        <p>配列の作者さまは、Xの @kanahairetsu へ、メンションかDMでご連絡ください。</p>
+      </div>
+      <a class="apply-btn" href="https://x.com/kanahairetsu" rel="me">Xで @kanahairetsu に連絡する</a>
+    </section>
   </main>
 </Base>
 
 <style>
-.site-head{margin:36px 0 26px;padding-bottom:22px;border-bottom:2px solid var(--ink)}
-.site-head h1{font-size:31px;font-weight:700;letter-spacing:.06em;line-height:1.3}
-.lede{margin-top:10px;font-size:14.5px;color:var(--ink-soft);max-width:52ch}
-.asof{margin-top:12px;font-size:12.5px;color:var(--ink-soft)}
+.hero{margin:48px 0 56px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:22px}
+.hero-logo{width:min(440px,86%)}
+.hero h1{font-size:48px;font-weight:900;letter-spacing:.06em;line-height:1.25}
+.catch{font-size:23px;font-weight:700;line-height:1.5;margin-top:-6px}
+.lede{font-size:15.5px;color:var(--ink-soft);line-height:1.9}
+.cta{display:inline-flex;align-items:center;min-height:48px;padding:0 28px;border-radius:8px;
+  background:var(--ink);color:var(--paper);font-weight:700;text-decoration:none}
+.cta:hover{background:#000}
+.asof{font-size:12.5px;color:var(--ink-soft);margin-top:-8px}
 
-.index{margin-bottom:56px}
+.index{margin-bottom:64px;scroll-margin-top:24px}
 .index h2{font-size:13px;color:var(--ink-soft);font-weight:400;margin-bottom:12px}
-.index ol{list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
-  border-top:1px solid var(--rule)}
-.index a{display:block;padding:12px 14px 13px;text-decoration:none;
-  border-bottom:1px solid var(--rule);border-left:4px solid var(--gc)}
-.index a:hover{background:#fff}
-.index .g{font-family:"Shippori Mincho B1",serif;font-size:16.5px;font-weight:700;display:block}
-.index .c{font-size:12px;color:var(--ink-soft)}
+.index ol{list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.index a{display:flex;flex-direction:column;gap:2px;height:100%;padding:16px 18px;text-decoration:none;
+  background:#fff;border:1px solid var(--rule);border-left:4px solid var(--gc);border-radius:10px}
+.index a:hover{border-color:var(--gc)}
+.index .g{font-family:"Zen Kaku Gothic New","BIZ UDPGothic",sans-serif;font-size:17px;font-weight:700}
+.index .c{font-size:12.5px;color:var(--ink-soft)}
 
 .genre{margin-bottom:64px;scroll-margin-top:24px}
 .genre-h{border-top:3px solid var(--gc);padding-top:16px;margin-bottom:24px;
@@ -69,8 +85,21 @@ const asOf = '2026年10月1日';
 .genre-h p{font-size:14px;max-width:56ch}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:22px}
 
+.apply{border-top:1px solid var(--rule);padding-top:32px;scroll-margin-top:24px;
+  display:flex;flex-wrap:wrap;gap:16px 32px;align-items:center;justify-content:space-between}
+.apply h2{font-size:17px;font-weight:700}
+.apply p{font-size:14px;color:var(--ink-soft)}
+.apply-btn{display:inline-flex;align-items:center;min-height:48px;padding:0 24px;border-radius:8px;
+  border:1.5px solid var(--ink);text-decoration:none;font-weight:700}
+.apply-btn:hover{background:#fff}
+
 @media (max-width:760px){
   .genre-h{grid-template-columns:1fr;gap:8px}
-  .site-head h1{font-size:25px}
+  .hero{margin:32px 0 44px;gap:18px}
+  .hero h1{font-size:32px}
+  .catch{font-size:19px}
+  .lede{font-size:14.5px}
+  .index ol{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .index a{padding:12px 14px}
 }
 </style>
