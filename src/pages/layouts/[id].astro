@@ -73,10 +73,11 @@ const scale = (labels, i) => labels.map((t, j) => ({ t, on: j === i }));
         {chordData && <KanaChart data={chordData} color={g.color} />}
         {l.geometry === 'steno' && l.keymapRows &&
           <StrokeExamples id={l.id} rows={l.keymapRows} color={g.color} name={l.name} />}
-        <LayoutNotes id={l.id} color={g.color} />
 
         <p class="lead mincho">{l.q31}</p>
         {l.q32 && <p class="supp">{l.q32}</p>}
+
+        <LayoutNotes id={l.id} color={g.color} />
 
         {l.anim && <Heatmap id={l.anim} geometry={l.geometry} />}
 
