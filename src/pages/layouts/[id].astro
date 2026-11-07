@@ -5,6 +5,7 @@ import TypingPlayer from '../../components/TypingPlayer.astro';
 import Heatmap from '../../components/Heatmap.astro';
 import KanaChart from '../../components/KanaChart.astro';
 import StrokeExamples from '../../components/StrokeExamples.astro';
+import LayoutNotes from '../../components/LayoutNotes.astro';
 import { LAYOUTS, genreOf, neighbours, scaleLabels, attribution, respondentNote } from '../../lib/data.js';
 
 export function getStaticPaths() {
@@ -72,6 +73,7 @@ const scale = (labels, i) => labels.map((t, j) => ({ t, on: j === i }));
         {chordData && <KanaChart data={chordData} color={g.color} />}
         {l.geometry === 'steno' && l.keymapRows &&
           <StrokeExamples id={l.id} rows={l.keymapRows} color={g.color} name={l.name} />}
+        <LayoutNotes id={l.id} color={g.color} />
 
         <p class="lead mincho">{l.q31}</p>
         {l.q32 && <p class="supp">{l.q32}</p>}

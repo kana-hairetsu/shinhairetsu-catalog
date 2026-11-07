@@ -1,0 +1,37 @@
+---
+/**
+ * 配列ごとの補足説明。src/content/notes/<id>.md があれば、その内容を1つの節として出す。
+ * 見出しは frontmatter の title。本文は Markdown（表・### の小見出しも使える）。
+ * 長い説明文は CSV に入れず、このファイルで管理する。
+ */
+interface Props { id: string; color?: string }
+const { id, color = 'var(--gc)' } = Astro.props;
+const NOTES = import.meta.glob('../content/notes/*.md', { eager: true });
+const note = Object.entries(NOTES).find(([p]) => p.endsWith(`/${id}.md`))?.[1] as any;
+const Content = note?.Content;
+---
+{note && (
+  <section class="notes" style={`--nc:${color}`}>
+    <h2 class="mincho">{note.frontmatter?.title}</h2>
+    <div class="body"><Content /></div>
+  </section>
+)}
+
+<style>
+.notes{margin-bottom:40px}
+.notes > h2{font-size:20px;font-weight:700;letter-spacing:.05em;
+  border-bottom:2px solid var(--ink);padding-bottom:7px;margin-bottom:18px}
+.body :global(p){font-size:14.5px;line-height:1.9;margin:0 0 14px}
+.body :global(h3){font-size:16px;font-weight:700;margin:26px 0 8px;
+  padding-left:10px;border-left:4px solid var(--nc)}
+.body :global(table){width:100%;border-collapse:collapse;font-size:14px;margin:6px 0 14px}
+.body :global(th),.body :global(td){border:1px solid var(--rule);padding:9px 12px;
+  text-align:left;vertical-align:top;line-height:1.75}
+.body :global(th){background:var(--nc);color:#fff;font-weight:700;white-space:nowrap}
+.body :global(td:first-child){white-space:nowrap;font-weight:700}
+@media (max-width:640px){
+  .body :global(table){font-size:13px}
+  .body :global(th),.body :global(td){padding:7px 8px}
+  .body :global(td:first-child){white-space:normal}
+}
+</style>
