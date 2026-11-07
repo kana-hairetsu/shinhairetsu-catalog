@@ -239,6 +239,10 @@ def main():
         else:
             lay = json.load(open(os.path.join(a.engine, c["json"]), encoding="utf-8"))
             labels, subs = kana_labels(lay)
+            if c.get("labels"):
+                # 独自のローマ字テーブルを kana_direct 形式で書いた配列（ピアノ配列など）は、
+                # 盤面にかなではなく英字を刷る
+                labels, subs = dict(c["labels"]), {}
             prefix = c.get("prefix") or {}
             acts = actions_kana(td, clip, lay, prefix)
             full_strokes = td.keystrokes_kana(full, lay)
