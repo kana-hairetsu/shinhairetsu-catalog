@@ -141,24 +141,33 @@ def actions_kana(td, text, layout, prefix=None):
         if st:
             seq.insert(0, (prev, st))
         pos = prev
+    # 前置シフトは1打（"k"）のほか、空白区切りで2打以上（"k l"）も書ける。
+    # 長いものから先に照合する
+    seqs = sorted(((p, p.split()) for p in (prefix or {})), key=lambda x: -len(x[1]))
     out = []
     for ci, st in seq:
         for j, (main, mods) in enumerate(st):
             a = {"c": ci, "k": mods + [main]}
             # 前置シフトのキーに続く打鍵は、そのシフト面の文字として光らせる
-            if prefix and j > 0 and not st[j - 1][1] and st[j - 1][0] in prefix:
-                a["L"] = st[j - 1][0]
+            for p, ks in seqs:
+                n = len(ks)
+                if j >= n and all(not st[j - n + i][1] and st[j - n + i][0] == ks[i]
+                                  for i in range(n)):
+                    a["L"] = p
+                    break
             out.append(a)
     return out
 
 
 def prefix_faces(layout, prefix):
-    """前置シフトの面。[シフトキー, キー] の2打で出る文字を、キーごとに拾う"""
+    """前置シフトの面。[シフトキー（1打以上）, キー] で出る文字を、キーごとに拾う"""
     faces = {p: {} for p in prefix}
-    for kana, spec in layout["map"].items():
-        if isinstance(spec, list) and len(spec) == 2 and spec[0] in prefix \
-                and "+" not in spec[0] + spec[1]:
-            faces[spec[0]].setdefault(spec[1], kana)
+    for p in prefix:
+        ks = p.split()
+        for kana, spec in layout["map"].items():
+            if isinstance(spec, list) and len(spec) == len(ks) + 1 \
+                    and spec[:-1] == ks and not any("+" in x for x in spec):
+                faces[p].setdefault(spec[-1], kana)
     return faces
 
 
